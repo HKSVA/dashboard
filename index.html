@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVA Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f0f2f5;color:#1a1a1a;font-size:14px}
+.topbar{background:#1a1a1a;padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.logo{color:#fff;font-size:16px;font-weight:700}.logo span{color:#4da6ff}
+.user-info{color:#aaa;font-size:13px;display:flex;align-items:center;gap:12px}
+.nav{display:flex;gap:2px;height:100%}
+.nav-btn{padding:0 16px;border:none;background:transparent;color:#999;font-size:13px;font-weight:600;cursor:pointer;height:100%;border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap}
+.nav-btn:hover{color:#fff}.nav-btn.active{color:#fff;border-bottom-color:#4da6ff}
+#login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#0f3460)}
+.login-card{background:#fff;border-radius:16px;padding:36px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-card h2{font-size:22px;margin-bottom:4px}.login-card p{color:#888;font-size:13px;margin-bottom:28px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:11px;font-weight:700;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px}
+.form-group select,.form-group input{width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;color:#1a1a1a;font-family:Arial}
+.btn{padding:9px 18px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:#fff;color:#1a1a1a;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:#f5f5f5}.btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-primary:hover{background:#333}.btn-sm{padding:4px 11px;font-size:12px}
+.btn-green{background:#27ae60;color:#fff;border-color:#27ae60}
+.main{padding:20px;max-width:1400px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.metric{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #eee}
+.metric-label{font-size:11px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.metric-val{font-size:24px;font-weight:700}
+.c-blue{color:#1a7fc1}.c-green{color:#27ae60}.c-red{color:#e74c3c}.c-purple{color:#8e44ad}
+.card{background:#fff;border-radius:10px;border:1px solid #eee;margin-bottom:16px;overflow:hidden}
+.card-header{padding:12px 18px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-size:14px;font-weight:700}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:9px 12px;background:#f8f9fa;color:#666;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #eee;white-space:nowrap;text-align:left}
+td{padding:8px 12px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
+.sub-table-row td{padding:0;background:#f8fbff}
+.sub-table{width:100%;border-collapse:collapse;font-size:12px}
+.sub-table td{padding:6px 12px 6px 32px;border-bottom:1px solid #edf2f7;color:#555}
+.sub-table tr:last-child td{border-bottom:none}
+.sub-toggle{cursor:pointer;user-select:none;color:#1a7fc1;font-size:12px;margin-left:6px}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.b-done{background:#d4edda;color:#155724}.b-booked{background:#cce5ff;color:#004085}
+.b-noshow{background:#f8d7da;color:#721c24}.b-ok{background:#d4edda;color:#155724}
+.b-warn{background:#fff3cd;color:#856404}.b-danger{background:#f8d7da;color:#721c24}
+.pay-paid{background:#d4edda;color:#155724;font-weight:700;padding:3px 9px;border-radius:20px;font-size:11px;display:inline-block}
+.pay-notice{background:#f8d7da;color:#721c24;font-weight:700;padding:3px 9px;border-radius:20px;font-size:11px;display:inline-block;cursor:pointer;border:none;font-family:Arial}
+.pay-notice:hover{background:#e74c3c;color:#fff}
+.pay-record{background:#f0f0f0;color:#666;font-weight:700;padding:3px 9px;border-radius:20px;font-size:11px;display:inline-block}
+.prog{height:7px;background:#eee;border-radius:4px;overflow:hidden;width:70px;display:inline-block;vertical-align:middle;margin-right:6px}
+.prog-fill{height:100%;border-radius:4px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;color:#1a1a1a;background:#fff}
+.ctabs{display:flex;gap:6px;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid #f0f0f0}
+.ctab{padding:7px 16px;border:2px solid transparent;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;color:#fff}
+.ctab.dim{background:#fff !important;color:#999 !important;border-color:#ddd !important}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid #f0f0f0;background:#fafafa;align-items:center}
+.pill-row-label{font-size:11px;color:#888;font-weight:700;text-transform:uppercase;margin-right:4px}
+.pill{padding:5px 14px;border:2px solid #ddd;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#666;transition:all .15s}
+.pill:hover:not(.active){background:#f0f0f0}
+.s-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.s-card{background:#fff;border-radius:10px;border:1px solid #eee;padding:16px;border-top-width:4px}
+#loading-msg{text-align:center;padding:60px 20px;font-size:15px;color:#888}
+.spinner{width:32px;height:32px;border:3px solid #eee;border-top-color:#4da6ff;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.alert{padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;display:flex;align-items:center;gap:8px}
+.alert-warn{background:#fff8e1;border:1px solid #ffe082;color:#795548}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.inst-filter{margin-bottom:16px}
+.inst-filter select{padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;min-width:180px}
+.inst-legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 18px;border-bottom:1px solid #f0f0f0;background:#fafafa}
+.inst-legend-item{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:28px;width:480px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{font-size:18px;margin-bottom:20px;font-weight:700}
+.modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.payroll-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.payroll-actions input[type=month]{padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px}
+@media(max-width:700px){.g2{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.main{padding:12px}.topbar{padding:0 10px}}
+</style>
+</head>
+<body>
+
+<div id="login-wrap">
+  <div class="login-card">
+    <h2>SVA Dashboard</h2>
+    <p>請選擇角色登入系統</p>
+    <p id="login-hint" style="font-size:12px;color:#888;margin-bottom:16px;margin-top:-16px">載入中...</p>
+    <div class="form-group">
+      <label>登入角色</label>
+      <select id="sel-role" onchange="onRoleChange()">
+        <option value="admin">Admin</option>
+        <option value="account">Account</option>
+        <option value="instructor">Instructor</option>
+        <option value="student">Student</option>
+      </select>
+    </div>
+    <div id="f-instructor" class="form-group" style="display:none">
+      <label>選擇導師</label>
+      <select id="sel-instructor"><option>載入中...</option></select>
+    </div>
+    <div id="f-student" class="form-group" style="display:none">
+      <label>學生姓名</label>
+      <input id="inp-student" type="text" placeholder="例：琛仔">
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:4px;justify-content:center" id="btn-login" onclick="doLogin()">登入</button>
+  </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal-bg" id="modal-add-student">
+  <div class="modal">
+    <h3>新增學生</h3>
+    <div class="form-group"><label>學生姓名 *</label><input id="ns-name" type="text" placeholder="例：琛仔"></div>
+    <div class="form-group"><label>電話 (852XXXXXXXX)</label><input id="ns-phone" type="text" placeholder="85298765432"></div>
+    <div class="form-group"><label>Email</label><input id="ns-email" type="text"></div>
+    <div class="form-group"><label>付款方式</label>
+      <select id="ns-paytype">
+        <option value="Term">Term</option>
+        <option value="Month">Month</option>
+      </select>
+    </div>
+    <div class="form-group"><label>目前課程 (E欄)</label>
+      <select id="ns-current-course">
+        <option value="">-- 請選擇 --</option>
+        <option>1on1</option>
+        <option>Evaluation</option>
+        <option>Jarie</option>
+        <option>Theatre</option>
+        <option>WT</option>
+        <option>Yearly</option>
+        <option>Choir</option>
+        <option>Trainee</option>
+        <option>Tech</option>
+        <option>Focus</option>
+        <option>練聲小組</option>
+      </select>
+    </div>
+    <div class="form-group"><label>目前老師 (F欄)</label>
+      <select id="ns-teacher">
+        <option value="">-- 請選擇 --</option>
+        <option>Guddy</option>
+        <option>Mellissa</option>
+        <option>Crystal</option>
+        <option>Yip</option>
+        <option>Chiling</option>
+        <option>Kenny</option>
+        <option>Yan</option>
+        <option>Tim</option>
+        <option>Lui</option>
+        <option>Jaire</option>
+      </select>
+    </div>
+    <div class="form-group"><label>其他課程 (如有)</label><input id="ns-other-course" type="text" placeholder="例：Jarie, songwriting M"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-add-student')">取消</button>
+      <button class="btn btn-primary" onclick="submitAddStudent()">新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Payment Modal -->
+<div class="modal-bg" id="modal-add-payment">
+  <div class="modal">
+    <h3>新增繳費記錄</h3>
+    <div class="form-group"><label>日期 *</label><input id="ap-date" type="date"></div>
+    <div class="form-group"><label>學生姓名 *</label><input id="ap-student-name" type="text"></div>
+    <div class="form-group"><label>Student Key *</label><input id="ap-student-key" type="text" placeholder="例：Elite 琛仔"></div>
+    <div class="form-group"><label>導師 *</label><input id="ap-instructor" type="text"></div>
+    <div class="form-group"><label>Course *</label><input id="ap-course" type="text"></div>
+    <div class="form-group"><label>金額 *</label><input id="ap-amount" type="number"></div>
+    <div class="form-group"><label>堂數</label><input id="ap-termsize" type="number" value="4"></div>
+    <div class="form-group"><label>付款方式</label>
+      <select id="ap-paytype"><option value="per_term">每期</option><option value="monthly">每月</option></select>
+    </div>
+    <div class="form-group"><label>期數 (例: T2)</label><input id="ap-period" type="text"></div>
+    
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-add-payment')">取消</button>
+      <button class="btn btn-primary" id="ap-submit-btn" onclick="submitAddPayment()">提交</button>
+    </div>
+  </div>
+</div>
+
+<div id="app-wrap" style="display:none">
+  <div class="topbar">
+    <div class="logo">SVA <span>Dashboard</span></div>
+    <div class="nav" id="main-nav"></div>
+    <div class="user-info">
+      <span id="lbl-user"></span>
+      <button class="btn btn-sm" style="color:#aaa;border-color:#444;background:transparent" onclick="doLogout()">登出</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div id="loading-msg"><div class="spinner"></div>載入資料中...</div>
+
+    <div class="page" id="page-admin-overview">
+      <div class="metrics" id="adm-metrics"></div>
+      <div class="alert alert-warn" id="adm-alert" style="display:none">&#9888; <span id="adm-alert-text"></span></div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">全部學生 Credit 狀況</span>
+          <input type="text" id="adm-search" placeholder="搜尋..." oninput="renderAdminOverview()" style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+        </div>
+        <div style="padding:10px 18px;border-bottom:1px solid #f0f0f0;background:#fafafa;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="pill-row-label">導師：</span><div id="adm-inst-pills" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+          <span class="pill-row-label" style="margin-left:12px">Course：</span><div id="adm-course-pills" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+          <span class="pill-row-label" style="margin-left:12px">付款：</span><div id="adm-pay-pills" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th></th><th>學生</th><th>課程數</th><th>總覽</th><th>WA</th></tr></thead>
+            <tbody id="adm-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-admin-students">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">學生列表</span>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="stu-search" placeholder="搜尋..." oninput="renderStudentList()" style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+            <button class="btn btn-green" onclick="openModal('modal-add-student')">新增學生</button>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th style="width:32px">#</th><th>學生</th><th>目前課程</th><th>Credit (課程/Code:餘額)</th><th>WA</th></tr></thead>
+            <tbody id="stu-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-admin-course">
+      <div class="ctabs" id="course-tabs"></div>
+      <div class="pill-row" id="inst-pill-row">
+        <span class="pill-row-label">導師：</span>
+        <div id="inst-pills" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+      <div style="padding:10px 18px;border-bottom:1px solid #f0f0f0;background:#fafafa">
+        <input type="text" id="crs-search" placeholder="搜尋學生..." oninput="renderCourseTable()" style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+      </div>
+      <div class="metrics" id="crs-metrics"></div>
+      <div class="card">
+        <div class="card-header"><span class="card-title" id="crs-title">Course 詳情</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>學生</th><th>導師</th><th>Total</th><th>Used</th><th>Booked</th><th>Balance</th><th>Term</th><th>進度</th><th>付款</th></tr></thead>
+            <tbody id="crs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-account-payments">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">繳費記錄</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="pay-month-filter" onchange="loadPayments()" style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px"><option value="">全部月份</option></select>
+            <button class="btn btn-green" onclick="openAddPayment()">新增繳費</button>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Pay_ID</th><th>日期</th><th>學生</th><th>Course</th><th>導師</th><th>金額</th><th>分成</th><th>分成金額</th><th>狀態</th><th>收據</th></tr></thead>
+            <tbody id="pay-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ACCOUNT: 分成設定 ===== -->
+    <div class="page" id="page-account-split">
+      <div class="g2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#9881; 分成設定</span>
+            <button class="btn btn-green btn-sm" onclick="openAddSplit()">+ 新增</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Course</th><th>Instructor</th><th>Studio %</th><th>Instructor %</th><th>備注</th></tr></thead>
+              <tbody id="split-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">&#128202; 月度分成總覽</span>
+            <input type="month" id="split-month" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:7px;font-size:13px" onchange="loadSplitSummary()">
+          </div>
+          <div id="split-summary" style="padding:16px 18px"></div>
+        <div id="split-table-wrap" style="padding:0 18px 16px"></div>
+        </div>
+      </div>
+      <!-- Add/Edit Split Modal -->
+      <div class="modal-bg" id="modal-add-split">
+        <div class="modal">
+          <h3>分成設定</h3>
+          <div class="form-group"><label>Course</label>
+            <select id="sp-course">
+              <option value="">-- 選擇 --</option>
+              <option>Elite</option><option>Perf</option><option>1on1</option>
+              <option>Choir</option><option>WT</option><option>Jarie</option>
+              <option>Theatre</option><option>Yearly</option><option>Trainee</option>
+              <option>Tech</option><option>Focus</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Instructor</label>
+            <select id="sp-instructor">
+              <option value="">-- 選擇 --</option>
+              <option>Yip</option><option>Chiling</option><option>Crystal</option>
+              <option>Guddy</option><option>Mellissa</option><option>Kenny</option>
+              <option>Yan</option><option>Tim</option><option>Lui</option><option>Jaire</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Studio % (e.g. 60)</label>
+            <input id="sp-studio" type="number" min="0" max="100" placeholder="60" oninput="updateInstPct()">
+          </div>
+          <div class="form-group"><label>Instructor % (auto-calculated)</label>
+            <input id="sp-inst" type="number" min="0" max="100" placeholder="40" readonly style="background:#f8f8f8">
+          </div>
+          <div class="form-group"><label>備注</label>
+            <input id="sp-notes" type="text" placeholder="可選">
+          </div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-add-split')">取消</button>
+            <button class="btn btn-primary" onclick="submitSplit()">儲存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-account-payroll">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">薪金記錄</span>
+          <div class="payroll-actions">
+            <input type="month" id="payroll-month">
+            <button class="btn btn-primary" onclick="loadPayrollData()">查看</button>
+            <button class="btn btn-green" onclick="exportPayroll()">生成報表</button>
+          </div>
+        </div>
+        <div style="padding:16px 18px" id="payroll-summary"></div>
+      </div>
+      <div class="card" id="payroll-detail-card" style="display:none">
+        <div class="card-header"><span class="card-title">詳細記錄</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>導師</th><th>Course</th><th>學生</th><th>日期</th><th>狀態</th><th>Rate</th><th>薪金</th></tr></thead>
+            <tbody id="payroll-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-instructor">
+      <div class="inst-filter" id="inst-filter-row" style="display:none">
+        <select id="inst-selector" onchange="renderInstructor()"><option value="ALL">全部導師</option></select>
+      </div>
+      <div class="metrics" id="inst-metrics"></div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">即將上課 (BOOKED)</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>日期</th><th>時間</th><th>學生</th><th>Course</th><th>進度</th><th>Action</th></tr></thead>
+            <tbody id="inst-upcoming"></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">最近已完成課堂</span></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>日期</th><th>時間</th><th>學生</th><th>狀態</th><th>薪金</th></tr></thead>
+            <tbody id="inst-done"></tbody>
+          </table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="inst-legend" id="inst-legend"></div>
+        <div class="card-header">
+          <span class="card-title">我的學生</span>
+          <div class="filters"><input type="text" id="inst-search" placeholder="搜尋..." oninput="renderInstStudents()"></div>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Course</th><th>導師</th><th>學生</th><th>Total</th><th>Used</th><th>Booked</th><th>Balance</th><th>Term</th><th>進度</th><th>Credit</th><th>Calendar Title</th><th>Book</th></tr></thead>
+          <tbody id="inst-students"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="page" id="page-student">
+      <div id="student-info-card" style="margin-bottom:16px"></div>
+      <div class="s-grid" id="student-cards"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+// =====================================================
+// API Configuration - GitHub Pages + Apps Script
+// =====================================================
+var API_URL = "https://script.google.com/macros/s/AKfycbzDGKoo2XPcKEfYkC0UX83fZzIzB5_D0x8IFa3g8KUfIfz3XJ6AaGZJh_fkQqomWcce/exec";
+
+function api(action, params, successCb, failureCb) {
+  fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({ action: action, params: params || {} })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.ok) {
+      if (successCb) successCb(res.data);
+    } else {
+      if (failureCb) failureCb(new Error(res.error));
+      else console.error("API error:", res.error);
+    }
+  })
+  .catch(function(err) {
+    if (failureCb) failureCb(err);
+    else console.error("Network error:", err);
+  });
+}
+
+
+// ============================================================
+// RULE: No single quotes or backslash-quotes inside JS strings.
+// All onclick handlers use data-* attributes + event delegation.
+// All unicode text uses \uXXXX escape sequences.
+// ============================================================
+
+// ---- CONFIG ------------------------------------------------
+var IC = {
+  Yip:"#e67c73", Yan:"#f6bf26", Crystal:"#f9bf04",
+  Guddy:"#039be5", Chiling:"#3f51b5", Mellissa:"#7986cb",
+  Kenny:"#8e24aa", Tim:"#616161"
+};
+var CC = {
+  Elite:  {bg:"#1a7fc1", lt:"#e8f4fd", tc:"#1a7fc1"},
+  Perf:   {bg:"#8e24aa", lt:"#f3e5f5", tc:"#6a1b9a"},
+  Choir:  {bg:"#e67e22", lt:"#fff3e0", tc:"#e65100"},
+  "1on1": {bg:"#27ae60", lt:"#e8f5e9", tc:"#1b5e20"}
+};
+function gc(c){ return CC[c]||{bg:"#616161",lt:"#f0f0f0",tc:"#555"}; }
+
+var WA_MSG = "Dear {student}, please arrange payment for your upcoming {course} class fee, thank you!";
+var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// ---- HELPERS -----------------------------------------------
+function fmtDate(s) {
+  if (!s) return "";
+  s = String(s).trim();
+  // yyyy-MM-dd (ISO)
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    var p = s.substring(0,10).split("-");
+    return parseInt(p[2]) + " " + MON[parseInt(p[1])-1] + " " + p[0];
+  }
+  // M/D/YYYY or MM/DD/YYYY
+  var us = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (us) {
+    return parseInt(us[2]) + " " + MON[parseInt(us[1])-1] + " " + us[3];
+  }
+  // "Tue Mar 31 2026 ..." or any JS Date toString format
+  // Try parsing as a Date object string
+  if (s.length > 15 && (s.includes("GMT") || s.indexOf(" ") > 0)) {
+    try {
+      var d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        // Format in HK time
+        var yr  = d.getFullYear();
+        var mon = d.getMonth(); // 0-indexed
+        var day = d.getDate();
+        // Adjust for HK timezone if needed (getDisplay already does offset)
+        return day + " " + MON[mon] + " " + yr;
+      }
+    } catch(e) {}
+  }
+  return s;
+}
+function fmtTime(s) {
+  if (!s) return ""; s = String(s).trim();
+  if (!s || s==="0" || s==="NaN") return "";
+  // HH:mm already
+  if (s.length===5 && s[2]===":") return s;
+  if (s.length===4 && s[1]===":") return "0"+s;
+  // "4:00 PM" or "16:00:00" formats
+  var ampm = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)/i);
+  if (ampm) {
+    var h=parseInt(ampm[1]), m=ampm[2], p=ampm[3].toUpperCase();
+    if(p==="PM"&&h!==12) h+=12;
+    if(p==="AM"&&h===12) h=0;
+    return String(h).padStart(2,"0")+":"+m;
+  }
+  // HH:mm:ss
+  var hms = s.match(/^(\d{1,2}):(\d{2}):\d{2}$/);
+  if (hms) return String(parseInt(hms[1])).padStart(2,"0")+":"+hms[2];
+  // Extract HH:mm from any string (e.g. Date toString)
+  var m2 = s.match(/(\d{1,2}):(\d{2})/);
+  if (m2) return m2[1].length===1?"0"+m2[0]:m2[0];
+  return "";
+}
+
+// Safe HTML builder -- NO nested quotes ever
+function el(tag, attrs, inner) {
+  var a = "";
+  for (var k in attrs) {
+    if (attrs[k] === null || attrs[k] === undefined) continue;
+    a += " " + k + "=" + JSON.stringify(String(attrs[k]));
+  }
+  return "<" + tag + a + ">" + (inner||"") + "</" + tag + ">";
+}
+function span(cls, text) {
+  return el("span", {"class": cls}, text);
+}
+
+function dot(name) {
+  var c = IC[name] || "#999";
+  return el("span", {
+    style: "display:inline-block;width:9px;height:9px;border-radius:50%;background:"+c+";margin-right:5px;vertical-align:middle"
+  }, "");
+}
+function badge(course) {
+  var cs = gc(course);
+  return el("span", {
+    "class": "badge",
+    style: "background:"+cs.lt+";color:"+cs.tc
+  }, course);
+}
+function balBadge(b) {
+  if (b < 0)  return el("span",{"class":"badge b-danger"}, b);
+  if (b <= 2) return el("span",{"class":"badge b-warn"}, b+" \u26A0");
+  return el("span",{"class":"badge b-ok"}, b);
+}
+function sBadge(s) {
+  var cls = s==="DONE"?"b-done":s==="BOOKED"?"b-booked":s==="NOSHOW"?"b-noshow":"";
+  return el("span",{"class":"badge "+cls}, s);
+}
+function metric(label, val, cls) {
+  return "<div class=&quot;metric&quot;><div class=&quot;metric-label&quot;>"+label+"</div>" +
+         "<div class=&quot;metric-val "+(cls||"c-blue")+"&quot;>"+val+"</div></div>";
+}
+function progBar(u, t) {
+  if (!t) return "";
+  var p = Math.min(100,Math.round(u/t*100));
+  var c = p>=80?"#e74c3c":p>=50?"#e67e22":"#4da6ff";
+  return "<div class=&quot;prog&quot;><div class=&quot;prog-fill&quot; style=&quot;width:"+p+"%;background:"+c+"&quot;></div></div>"+p+"%";
+}
+function payBadge(status, phone, student, course) {
+  if (status==="Paid") return el("span",{"class":"pay-paid"},"\u2713 Paid");
+  if (status==="Notice") {
+    if (phone) {
+      return el("button",{
+        "class":"pay-notice",
+        "data-action":"wa",
+        "data-phone": phone,
+        "data-student": student,
+        "data-course": course
+      }, "\u26A0 Notice");
+    }
+    return el("span",{"class":"pay-notice"},"\u26A0 Notice");
+  }
+  return el("span",{"class":"pay-record"},"\uD83D\uDCCB Record");
+}
+function waBtn(phone, name) {
+  if (!phone) return "";
+  return el("button",{
+    "class":"btn btn-sm",
+    style:"background:#25D366;color:#fff;border-color:#25D366;padding:3px 8px;font-size:11px",
+    "data-action":"wa",
+    "data-phone": phone,
+    "data-student": name,
+    "data-course": ""
+  }, "WA");
+}
+function openWA(phone, student, course) {
+  var msg = WA_MSG.replace("{student}", student||"").replace("{course}", course||"");
+  window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(msg), "_blank");
+}
+
+// ---- GLOBAL EVENT DELEGATION (replaces ALL onclick attrs) ----
+document.addEventListener("click", function(e) {
+  var t = e.target;
+  while (t && t !== document.body) {
+    var action = t.getAttribute("data-action");
+    if (action) {
+      if (action === "wa") {
+        openWA(t.getAttribute("data-phone")||"",
+               t.getAttribute("data-student")||"",
+               t.getAttribute("data-course")||"");
+        return;
+      }
+      if (action === "nav")   { showPage(t.getAttribute("data-page")); return; }
+      if (action === "login") { doLogin(); return; }
+      if (action === "logout"){ doLogout(); return; }
+      if (action === "course"){ setCourse(t.getAttribute("data-val")); return; }
+      if (action === "instf") { setInstFilter(t.getAttribute("data-val")); return; }
+      if (action === "admf")  { setAdmFilter(t.getAttribute("data-type"), t.getAttribute("data-val")); return; }
+      if (action === "sub")   { toggleSub(t.getAttribute("data-id")); return; }
+      if (action === "done")  { markDoneFromBooking(t.getAttribute("data-sk"), t.getAttribute("data-inst"), t.getAttribute("data-date")||"", t.getAttribute("data-time")||""); return; }
+      if (action === "add-student") { openModal("modal-add-student"); return; }
+      if (action === "add-payment") { openAddPayment(); return; }
+      if (action === "submit-student") { submitAddStudent(); return; }
+      if (action === "submit-payment") { submitAddPayment(); return; }
+      if (action === "close-modal") { closeModal(t.getAttribute("data-modal")); return; }
+      if (action === "payroll") { loadPayrollData(); return; }
+      if (action === "export-payroll") { exportPayroll(); return; }
+      if (action === "revenue") { loadRevenueSummary(); return; }
+      if (action === "add-split") { openAddSplit(); return; }
+      if (action === "submit-split") { submitSplit(); return; }
+    }
+    t = t.parentElement;
+  }
+});
+
+// ---- STATE -------------------------------------------------
+var S = {
+  role:"admin", instructor:"", studentName:"",
+  data:[], booking:[], lessonLog:[], courses:[],
+  currentCourse:"", currentInst:"ALL",
+  studentList:[], instRates:{}
+};
+var ADM = {inst:"ALL", course:"ALL", pay:"ALL"};
+
+// ---- MODALS ------------------------------------------------
+function openModal(id) { document.getElementById(id).classList.add("open"); }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+
+// ---- ROLE CHANGE -------------------------------------------
+function onRoleChange() {
+  var r = document.getElementById("sel-role").value;
+  document.getElementById("f-instructor").style.display = r==="instructor" ? "" : "none";
+  document.getElementById("f-student").style.display    = r==="student"    ? "" : "none";
+}
+
+// Read role from URL parameter
+// Fall back to getMyRole() email check
+function applyUserRole(role, instructor, email) {
+  var hint = document.getElementById("login-hint");
+  if (!role) return; // no role - show normal login
+
+  if (hint) hint.textContent = email || (role === "instructor" ? instructor : role);
+
+  var roleEl = document.getElementById("sel-role");
+  var labels = {admin:"Admin", account:"Account", instructor:"Instructor", student:"Student"};
+  roleEl.innerHTML = el("option", {value:role}, labels[role]||role);
+  roleEl.disabled  = true;
+  roleEl.style.background = "#f8f8f8";
+
+  if (role === "instructor" && instructor) {
+    document.getElementById("f-instructor").style.display = "";
+    var iEl = document.getElementById("sel-instructor");
+    iEl.innerHTML = el("option", {value:instructor}, instructor);
+    iEl.disabled  = true;
+    iEl.style.background = "#f8f8f8";
+  }
+  if (role === "student") document.getElementById("f-student").style.display = "";
+
+  window._detectedRole       = role;
+  window._detectedInstructor = instructor || "";
+}
+
+// Read role from URL parameter ?inst=Yip
+var urlParams = new URLSearchParams(window.location.search);
+var urlInst = urlParams.get("inst") || "";
+var urlPage = urlParams.get("page") || "";
+
+if (urlInst) {
+  // Instructor URL: ?inst=Yip
+  // Capitalize properly
+  var knownNames = ["Yip","Chiling","Crystal","Guddy","Mellissa","Kenny","Yan","Tim"];
+  var instName = urlInst.charAt(0).toUpperCase() + urlInst.slice(1).toLowerCase();
+  for (var ki=0; ki<knownNames.length; ki++) {
+    if (knownNames[ki].toLowerCase() === urlInst.toLowerCase()) {
+      instName = knownNames[ki]; break;
+    }
+  }
+  applyUserRole("instructor", instName, "");
+}
+// If no ?inst= param, show normal login page (Admin/Account select role manually)
+
+api("getInstructorList", {}, function(list) {
+    var el2 = document.getElementById("sel-instructor");
+    if (el2.options.length <= 1) {
+      el2.innerHTML = list.map(function(n){
+        return el("option",{value:n}, n);
+      }).join("");
+    }
+  })
+  .getInstructorList();
+
+// ---- LOGIN / LOGOUT ----------------------------------------
+function doLogin() {
+  // Use detected role from getMyRole() if available (locked)
+  S.role = window._detectedRole || document.getElementById("sel-role").value;
+  // For instructor: use detected name (locked)
+  if (S.role === "instructor") {
+    S.instructor = window._detectedInstructor ||
+                   document.getElementById("sel-instructor").value;
+  }
+  S.studentName = (document.getElementById("inp-student").value||"").trim();
+  if (S.role==="student" && !S.studentName) {
+    alert("\u8ACB\u8F38\u5165\u5B78\u751F\u59D3\u540D"); return;
+  }
+  document.getElementById("login-wrap").style.display = "none";
+  document.getElementById("app-wrap").style.display   = "";
+  var lu = S.role==="instructor" ? S.instructor :
+           S.role==="student"    ? S.studentName :
+           S.role==="account"    ? "Account" : "Admin";
+  document.getElementById("lbl-user").textContent = lu;
+  buildNav();
+  loadAllData();
+}
+function doLogout() {
+  document.getElementById("app-wrap").style.display   = "none";
+  document.getElementById("login-wrap").style.display = "flex";
+  S.data=[]; S.booking=[]; S.lessonLog=[]; S.courses=[]; S.studentList=[];
+}
+
+// ---- NAV ---------------------------------------------------
+function buildNav() {
+  var tabs;
+  if (S.role==="admin")   tabs=[["admin-overview","\u7E3D\u89BD"],["admin-students","\u5B78\u751F\u7BA1\u7406"],["admin-course","Course View"],["instructor","Instructor View"]];
+  else if(S.role==="account") tabs=[["account-payments","\u7E73\u8CBB\u8A18\u9304"],["account-split","\u5206\u6210\u7BA1\u7406"],["account-payroll","\u85AA\u91D1\u8A18\u9304"]];
+  else if(S.role==="instructor") tabs=[["instructor","\u6211\u7684\u8AB2\u5802"],["admin-course","Course View"]];
+  else tabs=[["student","\u6211\u7684\u8AB2\u5802"]];
+
+  document.getElementById("main-nav").innerHTML = tabs.map(function(t){
+    return el("button",{"class":"nav-btn","id":"tab-"+t[0],"data-action":"nav","data-page":t[0]}, t[1]);
+  }).join("");
+
+  var em = document.getElementById("payroll-month");
+  if (em && !em.value) {
+    var n = new Date();
+    em.value = n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0");
+  }
+  var sm = document.getElementById("split-month");
+  if (sm && !sm.value) {
+    var n2 = new Date();
+    sm.value = n2.getFullYear()+"-"+String(n2.getMonth()+1).padStart(2,"0");
+  }
+}
+
+function showPage(name) {
+  document.querySelectorAll(".page").forEach(function(p){ p.classList.remove("active"); });
+  document.querySelectorAll(".nav-btn").forEach(function(b){ b.classList.remove("active"); });
+  var pg = document.getElementById("page-"+name);
+  var bt = document.getElementById("tab-"+name);
+  if (pg) pg.classList.add("active");
+  if (bt) bt.classList.add("active");
+  if (name==="admin-overview")   renderAdminOverview();
+  else if(name==="admin-students") renderStudentList();
+  else if(name==="admin-course")   renderCourse();
+  else if(name==="instructor")     renderInstructor();
+  else if(name==="student")        renderStudent();
+  else if(name==="account-payments") loadPayments();
+  else if(name==="account-split")    loadSplitPage();
+  else if(name==="account-payroll")  { /* payroll shown on demand */ }
+}
+
+// ---- DATA LOADING ------------------------------------------
+function loadAllData() {
+  document.getElementById("loading-msg").style.display = "block";
+  var teacher = S.role==="instructor" ? S.instructor : "";
+  api("getDashboardDataFull", {role:S.role, teacher:teacher, studentName:S.studentName||""}, function(result) {
+      S.data     = result.ledger  || [];
+      S.booking  = result.booking || [];
+      S.lessonLog= result.log     || [];
+      var seen = {};
+      S.data.forEach(function(r){ if(!seen[r.course]){seen[r.course]=true;S.courses.push(r.course);} });
+      if (S.courses.length) S.currentCourse = S.courses[0];
+      document.getElementById("loading-msg").style.display = "none";
+      buildFilters();
+      api("getInstRates", {}, function(r){ S.instRates=r||{}; });
+      var dp = S.role==="instructor" ? "instructor" :
+               S.role==="student"    ? "student" :
+               S.role==="account"    ? "account-payments" : "admin-overview";
+      showPage(dp);
+    }){
+      document.getElementById("loading-msg").innerHTML = el("p",{style:"color:#e74c3c"},""+err);
+    })
+    .getDashboardDataFull(S.role, teacher, S.studentName);
+}
+
+function buildFilters() {
+  var insts = {};
+  S.data.forEach(function(r){ insts[r.instructor]=1; });
+  var iOpts = el("option",{value:""}, "\u5168\u90E8\u5C0E\u5E2B") +
+    Object.keys(insts).map(function(n){ return el("option",{value:n},n); }).join("");
+  var af = document.getElementById("adm-f-inst");
+  if (af) af.innerHTML = iOpts;
+  var cf = document.getElementById("adm-f-course");
+  if (cf) cf.innerHTML = el("option",{value:""}, "\u5168\u90E8 Course") +
+    S.courses.map(function(c){ return el("option",{value:c},c); }).join("");
+  var isel = document.getElementById("inst-selector");
+  if (isel) {
+    isel.innerHTML = el("option",{value:"ALL"},"\u5168\u90E8\u5C0E\u5E2B") +
+      Object.keys(insts).map(function(n){ return el("option",{value:n},n); }).join("");
+    var ifr = document.getElementById("inst-filter-row");
+    if (ifr) ifr.style.display = S.role==="admin" ? "" : "none";
+  }
+  var leg = document.getElementById("inst-legend");
+  if (leg) leg.innerHTML = Object.keys(insts).map(function(n){
+    var c = IC[n]||"#999";
+    return "<div class=&quot;inst-legend-item&quot;>" +
+      el("span",{style:"display:inline-block;width:12px;height:12px;border-radius:50%;background:"+c},"") +
+      el("span",{},n) + "</div>";
+  }).join("");
+  buildAdminPills();
+}
+
+// ---- ADMIN PILLS -------------------------------------------
+function buildAdminPills() {
+  var insts={}, courses={};
+  S.data.forEach(function(r){ insts[r.instructor]=1; courses[r.course]=1; });
+
+  var ip = document.getElementById("adm-inst-pills");
+  if (ip) ip.innerHTML = ["ALL"].concat(Object.keys(insts)).map(function(n){
+    var isA = ADM.inst===n;
+    var col = n==="ALL" ? "#555" : (IC[n]||"#555");
+    var st  = isA ? "background:"+col+";color:#fff;border-color:"+col : "";
+    return el("button",{"class":"pill"+(isA?" active":""), style:st,
+      "data-action":"admf","data-type":"inst","data-val":n},
+      n==="ALL" ? "\u5168\u90E8" : n);
+  }).join("");
+
+  var cp = document.getElementById("adm-course-pills");
+  if (cp) cp.innerHTML = ["ALL"].concat(Object.keys(courses)).map(function(c){
+    var isA = ADM.course===c;
+    var cs  = gc(c);
+    var st  = isA ? "background:"+cs.bg+";color:#fff;border-color:"+cs.bg : "";
+    return el("button",{"class":"pill"+(isA?" active":""), style:st,
+      "data-action":"admf","data-type":"course","data-val":c},
+      c==="ALL" ? "\u5168\u90E8" : c);
+  }).join("");
+
+  var pp = document.getElementById("adm-pay-pills");
+  if (pp) pp.innerHTML = [
+    {v:"ALL",l:"\u5168\u90E8"},{v:"Paid",l:"Paid"},
+    {v:"Notice",l:"Notice"},{v:"Record",l:"Record"}
+  ].map(function(o){
+    var isA = ADM.pay===o.v;
+    var st  = isA ? "background:#555;color:#fff;border-color:#555" : "";
+    return el("button",{"class":"pill"+(isA?" active":""), style:st,
+      "data-action":"admf","data-type":"pay","data-val":o.v}, o.l);
+  }).join("");
+}
+function setAdmFilter(type, val) {
+  ADM[type] = val;
+  buildAdminPills();
+  renderAdminOverview();
+}
+
+// ---- ADMIN OVERVIEW ----------------------------------------
+function renderAdminOverview() {
+  var q  = (document.getElementById("adm-search")||{value:""}).value.toLowerCase();
+  var map = {};
+  S.data.forEach(function(r) {
+    if (q && !(r.student+r.key).toLowerCase().includes(q)) return;
+    if (ADM.inst   !== "ALL" && r.instructor !== ADM.inst)   return;
+    if (ADM.course !== "ALL" && r.course     !== ADM.course) return;
+    if (ADM.pay    !== "ALL" && r.payStatus  !== ADM.pay)    return;
+    if (!map[r.student]) map[r.student] = {rows:[], phone:r.phone};
+    map[r.student].rows.push(r);
+  });
+
+  var low=0, notice=0;
+  Object.keys(map).forEach(function(n){ map[n].rows.forEach(function(r){
+    if(r.balance<=2)low++; if(r.payStatus==="Notice")notice++;
+  }); });
+
+  document.getElementById("adm-metrics").innerHTML =
+    metric("\u7E3D\u5B78\u751F\u6578", Object.keys(map).length) +
+    metric("Credit \u4E0D\u8DB3", low,   low>0?"c-red":"c-green") +
+    metric("\u26A0 Notice",       notice, notice>0?"c-red":"c-green") +
+    metric("Course \u8A18\u9304", S.data.length, "c-blue");
+
+  var al = document.getElementById("adm-alert");
+  var warns = [];
+  if (low>0)    warns.push(low+"\u9805 credit \u4E0D\u8DB3");
+  if (notice>0) warns.push(notice+"\u9805\u9700\u8981\u7E8C\u8CBB");
+  if (al) { al.style.display = warns.length?"flex":"none"; }
+  var at = document.getElementById("adm-alert-text");
+  if (at) at.textContent = warns.join("\uFF1B");
+
+  var html = "";
+  Object.keys(map).sort().forEach(function(name) {
+    var sd   = map[name];
+    var rows = sd.rows;
+    var rid  = "sub-" + name.replace(/[^a-zA-Z0-9]/g, "-");
+
+    var summary = rows.map(function(r){
+      var cs  = gc(r.course);
+      var code= r.instCode ? r.course+"/"+r.instCode : r.course;
+      var bc  = r.balance<0?"#e74c3c":r.balance<=2?"#e67e22":"#27ae60";
+      return el("span",{style:"background:"+cs.lt+";color:"+cs.tc+
+        ";font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;display:inline-block;margin:1px"},
+        code+": "+el("span",{style:"color:"+bc},r.balance));
+    }).join(" ");
+
+    html += "<tr>" +
+      "<td>" + el("span",{"class":"sub-toggle","data-action":"sub","data-id":rid},"\u25B6") + "</td>" +
+      "<td><strong>"+name+"</strong></td>" +
+      "<td>" + el("span",{"class":"badge",style:"background:#f0f0f0;color:#555"}, rows.length+" \u8AB2") + "</td>" +
+      "<td>"+summary+"</td>" +
+      "<td>"+waBtn(sd.phone, name)+"</td>" +
+    "</tr>" +
+    "<tr class=&quot;sub-table-row&quot; id=&quot;"+rid+"&quot; style=&quot;display:none&quot;><td colspan=&quot;5&quot;>" +
+      "<table class=&quot;sub-table&quot;>" +
+      "<tr>" +
+        "<td style=&quot;font-weight:700;color:#888;font-size:11px;padding-left:32px&quot;>Course</td>" +
+        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>\u5C0E\u5E2B</td>" +
+        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>Balance</td>" +
+        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>Term</td>" +
+        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>\u9032\u5EA6</td>" +
+        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>\u4ED8\u6B3E</td>" +
+      "</tr>" +
+      rows.map(function(r){
+        return "<tr>" +
+          "<td>"+badge(r.course)+"</td>" +
+          "<td>"+dot(r.instructor)+r.instructor+"</td>" +
+          "<td>"+balBadge(r.balance)+"</td>" +
+          "<td>T"+r.term+"</td>" +
+          "<td>"+r.progress+"</td>" +
+          "<td>"+payBadge(r.payStatus, r.phone, r.student, r.course)+"</td>" +
+        "</tr>";
+      }).join("") +
+      "</table>" +
+    "</td></tr>";
+  });
+  document.getElementById("adm-tbody").innerHTML = html;
+}
+function toggleSub(id) {
+  var el2 = document.getElementById(id);
+  if (!el2) return;
+  var h = el2.style.display === "none";
+  el2.style.display = h ? "" : "none";
+  var row = el2.previousElementSibling;
+  if (row) { var t = row.querySelector(".sub-toggle"); if(t) t.innerHTML = h?"\u25BC":"\u25B6"; }
+}
+
+// ---- STUDENT LIST ------------------------------------------
+function renderStudentList() {
+  var q = (document.getElementById("stu-search")||{value:""}).value.toLowerCase();
+  if (!S.studentList.length) {
+    api("getStudentList", {}, function(d){ S.studentList=d||[]; renderStudentList(); });
+    document.getElementById("stu-tbody").innerHTML =
+      "<tr><td colspan=&quot;6&quot; style=&quot;text-align:center;padding:20px;color:#aaa&quot;>\u8F09\u5165\u4E2D...</td></tr>";
+    return;
+  }
+  var list = S.studentList.filter(function(s){
+    return !q || s.name.toLowerCase().includes(q) || (s.fullName||"").toLowerCase().includes(q);
+  });
+  document.getElementById("stu-tbody").innerHTML = list.map(function(s, i){
+    var courses = (s.courses||[]).map(function(c){
+      var cs   = gc(c.course);
+      var label= c.instCode ? c.course+"/"+c.instCode : c.course;
+      var bc   = c.balance<0?"#e74c3c":c.balance<=2?"#e67e22":"#27ae60";
+      return el("span",{style:"background:"+cs.lt+";color:"+cs.tc+
+        ";font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;display:inline-block;margin:1px"},
+        label+": "+el("span",{style:"color:"+bc},c.balance));
+    }).join(" ");
+    return "<tr>" +
+      "<td style=&quot;color:#bbb;font-size:12px;width:32px;text-align:right&quot;>"+(i+1)+"</td>" +
+      "<td><strong>"+s.name+"</strong>"+(s.fullName?" "+el("small",{style:"color:#bbb"},s.fullName):"")+"</td>" +
+      "<td style=&quot;font-size:12px;color:#1a7fc1;font-weight:600&quot;>"+(s.currentCourse||"")+"</td>" +
+      "<td>"+courses+"</td>" +
+      "<td>"+waBtn(s.phone, s.name)+"</td>" +
+    "</tr>";
+  }).join("");
+}
+function submitAddStudent() {
+  var name = document.getElementById("ns-name").value.trim();
+  if (!name) { alert("\u8ACB\u586B\u5165\u5B78\u751F\u59D3\u540D"); return; }
+  api("addStudent", {name:name,phone:phone,email:email,payType:payType,currentCourse:currentCourse,currentTeacher:currentTeacher,otherCourse:otherCourse}, function(r){
+      alert(r.msg);
+      if(r.ok){ closeModal("modal-add-student"); S.studentList=[]; renderStudentList(); }
+    })
+;
+}
+
+// ---- COURSE VIEW -------------------------------------------
+function renderCourse() {
+  var c = S.currentCourse, cs = gc(c);
+  document.getElementById("course-tabs").innerHTML = S.courses.map(function(cc){
+    var ccs=gc(cc), isA=(cc===c);
+    return el("div",{
+      "class":"ctab"+(isA?"":" dim"),
+      style: isA?"background:"+ccs.bg+";border-color:"+ccs.bg+";color:"+ccs.text:"",
+      "data-action":"course","data-val":cc
+    }, cc);
+  }).join("");
+
+  var courseRows = S.data.filter(function(r){ return r.course===c; });
+  var insts = {};
+  courseRows.forEach(function(r){ insts[r.instructor]=1; });
+
+  document.getElementById("inst-pills").innerHTML = ["ALL"].concat(Object.keys(insts)).map(function(n){
+    var isA = S.currentInst===n;
+    var st  = isA ? "background:"+cs.bg+";border-color:"+cs.bg+";color:#fff" : "";
+    return el("button",{"class":"pill"+(isA?" active":""), style:st,
+      "data-action":"instf","data-val":n},
+      n==="ALL" ? "\u5168\u90E8" : n);
+  }).join("");
+
+  var low = courseRows.filter(function(r){ return r.balance<0; });
+  document.getElementById("crs-metrics").innerHTML =
+    "<div class=&quot;metric&quot;><div class=&quot;metric-label&quot;>Course</div>" +
+    "<div class=&quot;metric-val&quot; style=&quot;color:"+cs.bg+"&quot;>"+c+"</div></div>" +
+    metric("\u5B78\u751F\u7E3D\u6578", courseRows.length) +
+    metric("Credit \u4E0D\u8DB3", low.length, low.length>0?"c-red":"c-green") +
+    metric("\u5C0E\u5E2B\u6578", Object.keys(insts).length, "c-blue");
+  document.getElementById("crs-title").textContent = c + " Course";
+  renderCourseTable();
+}
+function setCourse(c) { S.currentCourse=c; S.currentInst="ALL"; renderCourse(); }
+function setInstFilter(v) { S.currentInst=v; renderCourse(); }
+function renderCourseTable() {
+  var c = S.currentCourse;
+  var q = (document.getElementById("crs-search")||{value:""}).value.toLowerCase();
+  var rows = S.data.filter(function(r){
+    if (r.course !== c) return false;
+    if (S.currentInst!=="ALL" && r.instructor!==S.currentInst) return false;
+    if (q && !(r.student+r.key).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById("crs-tbody").innerHTML = rows.map(function(r){
+    return "<tr>" +
+      "<td><strong>"+r.student+"</strong></td>" +
+      "<td>"+dot(r.instructor)+r.instructor+"</td>" +
+      "<td>"+r.total+"</td><td>"+r.used+"</td><td>"+r.booked+"</td>" +
+      "<td>"+balBadge(r.balance)+"</td>" +
+      "<td>T"+r.term+"</td><td>"+progBar(r.used,r.total)+"</td>" +
+      "<td>"+payBadge(r.payStatus,r.phone,r.student,r.course)+"</td>" +
+    "</tr>";
+  }).join("");
+}
+
+// ---- PAYMENTS ----------------------------------------------
+function loadPayments() {
+  var filter = (document.getElementById("pay-month-filter")||{value:""}).value;
+  document.getElementById("pay-tbody").innerHTML =
+    "<tr><td colspan=&quot;9&quot; style=&quot;text-align:center;padding:20px;color:#aaa&quot;>\u8F09\u5165\u4E2D...</td></tr>";
+  api("getPaymentMonths", {}, function(months){
+    var sel=document.getElementById("pay-month-filter"), cur=sel.value;
+    sel.innerHTML = el("option",{value:""}, "\u5168\u90E8\u6708\u4EFD") +
+      months.map(function(m){ return el("option",{value:m},m); }).join("");
+    if(cur) sel.value=cur;
+  }).getPaymentMonths();
+  api("getPaymentList", {filterMonth:filterMonth}, function(rows){
+      if (!rows.length) {
+        document.getElementById("pay-tbody").innerHTML =
+          "<tr><td colspan=&quot;9&quot; style=&quot;text-align:center;padding:20px;color:#aaa&quot;>\u66AB\u7121\u8A18\u9304</td></tr>";
+        return;
+      }
+      document.getElementById("pay-tbody").innerHTML = rows.map(function(r){
+        var rcpt = r.receiptUrl ?
+          el("a",{href:r.receiptUrl,target:"_blank","class":"btn btn-sm"},"\uD83D\uDCC4") : "";
+        var proc = r.processed==="YES" ?
+          el("span",{"class":"badge b-done"},"\u5DF2\u5165\u5E33") :
+          el("span",{"class":"badge b-warn"},"\u5F85\u8655\u7406");
+        var stShare = r.studioShare !== undefined ?
+          "$"+r.studioShare+" / $"+r.instShare : "";
+        return "<tr>" +
+          "<td>"+el("small",{style:"color:#888"},r.payId)+"</td>" +
+          "<td>"+fmtDate(r.date)+"</td>" +
+          "<td><strong>"+r.studentName+"</strong></td>" +
+          "<td>"+badge(r.course)+"</td>" +
+          "<td>"+dot(r.instructor)+r.instructor+"</td>" +
+          "<td><strong>$"+r.amount+"</strong></td>" +
+          "<td>"+(r.studioPct||"?")+"%/"+(r.instPct||"?")+"%</td>" +
+          "<td>"+stShare+"</td>" +
+          "<td>"+proc+"</td>" +
+          "<td>"+rcpt+"</td>" +
+        "</tr>";
+      }).join("");
+    })
+    .getPaymentWithSplit(filter);
+}
+function openAddPayment() {
+  var t=new Date();
+  var ds=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
+  document.getElementById("ap-date").value = ds;
+  openModal("modal-add-payment");
+}
+function submitAddPayment() {
+  var btn = document.getElementById("ap-submit-btn");
+  btn.disabled=true; btn.textContent="\u63D0\u4EA4\u4E2D...";
+  var pd = {
+    date:        document.getElementById("ap-date").value,
+    studentName: document.getElementById("ap-student-name").value.trim(),
+    studentKey:  document.getElementById("ap-student-key").value.trim(),
+    instructor:  document.getElementById("ap-instructor").value.trim(),
+    course:      document.getElementById("ap-course").value.trim(),
+    amount:      document.getElementById("ap-amount").value,
+    termSize:    document.getElementById("ap-termsize").value||"4",
+    payType:     document.getElementById("ap-paytype").value,
+    period:      document.getElementById("ap-period").value.trim()
+  };
+  if (!pd.date||!pd.studentName||!pd.studentKey||!pd.amount) {
+    alert("\u8ACB\u586B\u5BEB\u5FC5\u586B\u9805\u76EE(*)");
+    btn.disabled=false; btn.textContent="\u63D0\u4EA4"; return;
+  }
+    api("addPaymentRecord", {payData:pd}, function(r){
+      btn.disabled=false; btn.textContent="\u63D0\u4EA4";
+      alert(r.msg);
+      if(r.ok){ closeModal("modal-add-payment"); loadPayments(); }
+    });
+}
+
+// ---- REVENUE / SPLIT ---------------------------------------
+function loadSplitPage() {
+  var sm = document.getElementById("split-month");
+  if (sm && !sm.value) {
+    var n=new Date(); sm.value=n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0");
+  }
+  loadRevenueSummary();
+}
+function loadRevenueSummary() {
+  var m=(document.getElementById("split-month")||{value:""}).value;
+  if(!m) return;
+  var sd=document.getElementById("split-summary");
+  if(sd) sd.innerHTML="<div class=&quot;spinner&quot; style=&quot;width:20px;height:20px;margin:16px auto&quot;></div>";
+  var tw=document.getElementById("split-table-wrap"); if(tw) tw.innerHTML="";
+  api("getRevenueReport", {yearMonth:ym}, renderRevenueReport){ if(sd) sd.innerHTML=el("p",{style:"color:#e74c3c"},""+e); });
+}
+function renderRevenueReport(data) {
+  if(!data) return;
+  var sd=document.getElementById("split-summary");
+  var tw=document.getElementById("split-table-wrap");
+  var net=data.totalNet||0, nc=net>=0?"#27ae60":"#e74c3c";
+  if(sd) sd.innerHTML =
+    "<div style=&quot;display:grid;grid-template-columns:repeat(3,1fr);gap:10px&quot;>" +
+    "<div style=&quot;background:#e8f4fd;border-radius:8px;padding:14px;text-align:center&quot;>" +
+      "<div style=&quot;font-size:11px;color:#888;font-weight:700&quot;>Fee Income</div>" +
+      "<div style=&quot;font-size:22px;font-weight:700;color:#1a7fc1;margin-top:4px&quot;>$"+(data.totalFee||0)+"</div></div>" +
+    "<div style=&quot;background:#fce4ec;border-radius:8px;padding:14px;text-align:center&quot;>" +
+      "<div style=&quot;font-size:11px;color:#888;font-weight:700&quot;>Instructor Salary</div>" +
+      "<div style=&quot;font-size:22px;font-weight:700;color:#c0392b;margin-top:4px&quot;>$"+(data.totalSalary||0)+"</div></div>" +
+    "<div style=&quot;background:"+(net>=0?"#e8f5e9":"#ffebee")+";border-radius:8px;padding:14px;text-align:center&quot;>" +
+      "<div style=&quot;font-size:11px;color:#888;font-weight:700&quot;>Studio Net</div>" +
+      "<div style=&quot;font-size:22px;font-weight:700;color:"+nc+";margin-top:4px&quot;>$"+net+"</div></div></div>";
+
+  var byI=data.byInstructor||{}, insts=Object.keys(byI).sort();
+  if(!insts.length){ if(tw) tw.innerHTML="<p style=&quot;color:#aaa;padding:16px&quot;>No data this month.</p>"; return; }
+  var h = "<div class=&quot;tbl-wrap&quot; style=&quot;margin-top:16px&quot;><table>" +
+    "<thead><tr><th>Instructor</th><th>Course</th><th>Lessons</th>" +
+    "<th style=&quot;color:#1a7fc1&quot;>Fee</th><th style=&quot;color:#c0392b&quot;>Salary</th>" +
+    "<th>Studio Net</th></tr></thead><tbody>";
+  insts.forEach(function(inst){
+    var d=byI[inst], ic=d.net>=0?"#27ae60":"#e74c3c";
+    h += "<tr style=&quot;background:#f0f2f5&quot;>" +
+      "<td colspan=&quot;2&quot;><strong>"+dot(inst)+inst+"</strong></td>" +
+      "<td style=&quot;color:#888;font-size:12px&quot;>"+(d.courses||[]).length+" courses</td>" +
+      "<td><strong style=&quot;color:#1a7fc1&quot;>$"+d.fee+"</strong></td>" +
+      "<td><strong style=&quot;color:#c0392b&quot;>$"+d.salary+"</strong></td>" +
+      "<td><strong style=&quot;color:"+ic+"&quot;>$"+d.net+"</strong></td></tr>";
+    (d.courses||[]).forEach(function(c){
+      var cc=c.net>=0?"#27ae60":"#e74c3c";
+      var barW=c.fee>0?Math.min(100,Math.round(c.salary/c.fee*100)):0;
+      var bar="<div style=&quot;height:4px;background:#eee;border-radius:2px;margin-top:3px;width:80px&quot;>" +
+        "<div style=&quot;height:100%;width:"+barW+"%;background:#c0392b;border-radius:2px&quot;></div></div>";
+      h += "<tr style=&quot;background:#fafbfd&quot;>" +
+        "<td style=&quot;padding-left:24px;color:#aaa;font-size:11px&quot;>&mdash;</td>" +
+        "<td>"+badge(c.course)+"</td>" +
+        "<td style=&quot;font-size:12px;color:#888&quot;>"+c.lessons+" lessons</td>" +
+        "<td style=&quot;color:#1a7fc1&quot;>$"+c.fee+"</td>" +
+        "<td style=&quot;color:#c0392b&quot;>$"+c.salary+bar+"</td>" +
+        "<td style=&quot;color:"+cc+";font-weight:600&quot;>$"+c.net+"</td></tr>";
+    });
+  });
+  var gtc=(data.totalNet||0)>=0?"#4ade80":"#f87171";
+  h += "<tr style=&quot;background:#1a1a1a;color:#fff&quot;>" +
+    "<td colspan=&quot;3&quot;><strong>TOTAL</strong></td>" +
+    "<td><strong style=&quot;color:#60a5fa&quot;>$"+(data.totalFee||0)+"</strong></td>" +
+    "<td><strong style=&quot;color:#fca5a5&quot;>$"+(data.totalSalary||0)+"</strong></td>" +
+    "<td><strong style=&quot;color:"+gtc+"&quot;>$"+(data.totalNet||0)+"</strong></td>" +
+    "</tr></tbody></table></div>";
+  if(tw) tw.innerHTML=h;
+}
+function openAddSplit(){ alert("Set rates directly in Payroll_Rates sheet."); }
+function submitSplit(){}
+
+// ---- PAYROLL -----------------------------------------------
+function loadPayrollData() {
+  var m=(document.getElementById("payroll-month")||{value:""}).value;
+  var ps=document.getElementById("payroll-summary");
+  var dc=document.getElementById("payroll-detail-card");
+  if(ps) ps.innerHTML="<div class=&quot;spinner&quot; style=&quot;width:20px;height:20px;margin:0 auto&quot;></div>";
+  if(dc) dc.style.display="none";
+  api("getPayrollData", {yearMonth:ym}, function(data){
+      var grandTotal=0;
+      var sumHtml="<div style=&quot;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px&quot;>";
+      Object.keys(data.summary).sort().forEach(function(inst){
+        var s=data.summary[inst]; grandTotal+=s.total;
+        var col=IC[inst]||"#888";
+        sumHtml+="<div style=&quot;background:#fff;border-radius:8px;padding:12px;border:1px solid #eee;border-top:3px solid "+col+"&quot;>" +
+          "<div style=&quot;font-size:12px;font-weight:700;margin-bottom:8px&quot;>"+dot(inst)+inst+"</div>" +
+          "<div style=&quot;font-size:22px;font-weight:700;color:"+col+"&quot;>$"+s.total+"</div>" +
+          "<div style=&quot;font-size:12px;color:#888;margin-top:4px&quot;>"+s.done+" lessons</div></div>";
+      });
+      sumHtml+="<div style=&quot;background:#1a1a1a;border-radius:8px;padding:12px;display:flex;flex-direction:column;justify-content:center&quot;>" +
+        "<div style=&quot;font-size:12px;font-weight:700;color:#aaa;margin-bottom:4px&quot;>TOTAL</div>" +
+        "<div style=&quot;font-size:22px;font-weight:700;color:#4da6ff&quot;>$"+grandTotal+"</div></div></div>";
+      if(ps) ps.innerHTML=sumHtml;
+      if(dc) dc.style.display="";
+      var tb=document.getElementById("payroll-tbody");
+      if(tb) tb.innerHTML=data.records.map(function(r){
+        return "<tr>" +
+          "<td>"+dot(r.instructor)+r.instructor+"</td>" +
+          "<td>"+badge(r.course)+"</td>" +
+          "<td>"+r.student+"</td>" +
+          "<td>"+fmtDate(r.date)+"</td>" +
+          "<td>"+sBadge(r.status)+"</td>" +
+          "<td>$"+r.rate+"</td>" +
+          "<td><strong>$"+r.pay+"</strong></td></tr>";
+      }).join("");
+    }){ if(ps) ps.innerHTML=el("p",{style:"color:#e74c3c"},""+e); })
+    .getPayrollData(m);
+}
+function exportPayroll() {
+  var m=(document.getElementById("payroll-month")||{value:""}).value;
+  api("generatePayroll", {yearMonth:m}, function(msg){ alert(msg); });
+}
+
+// ---- INSTRUCTOR VIEW ---------------------------------------
+function renderInstructor() {
+  var isel=document.getElementById("inst-selector");
+  var inst=S.role==="instructor"?S.instructor:(isel?isel.value:"ALL");
+  var myData=S.data.filter(function(r){ return inst==="ALL"||r.instructor===inst; });
+  var done  =S.lessonLog.filter(function(l){ return (inst==="ALL"||l.instructor===inst)&&l.status==="DONE"; }).length;
+  var booked=S.booking.filter(function(b){ return inst==="ALL"||b.instructor===inst; }).length;
+  var low   =myData.filter(function(r){ return r.balance<0; }).length;
+  document.getElementById("inst-metrics").innerHTML =
+    metric("\u6211\u7684\u5B78\u751F", myData.length) +
+    metric("\u672A\u4F86\u9810\u7D04", booked,"c-blue") +
+    metric("\u5DF2\u5B8C\u6210\u8AB2\u5802", done,"c-green") +
+    metric("Credit \u4E0D\u8DB3", low, low>0?"c-red":"c-green");
+
+  var upcoming=S.booking.filter(function(b){ return inst==="ALL"||b.instructor===inst; }).slice(0,20);
+  document.getElementById("inst-upcoming").innerHTML = upcoming.length ?
+    upcoming.map(function(b){
+      var mBtn = el("button",{
+        "class":"btn btn-sm btn-green",
+        style:"font-size:11px;padding:4px 10px",
+        "data-action":"done",
+        "data-sk":b.student,
+        "data-inst":b.instructor,
+        "data-date":b.date,
+        "data-time":b.time
+      }, "Done");
+      return "<tr>" +
+        "<td>"+fmtDate(b.date)+"</td><td>"+fmtTime(b.time)+"</td>" +
+        "<td>"+b.student+"</td>" +
+        "<td>"+badge(b.course||"")+"</td>" +
+        "<td>"+(b.lessonNum?el("span",{"class":"badge b-booked"},b.lessonNum):"")+"</td>" +
+        "<td>"+mBtn+"</td></tr>";
+    }).join("") :
+    "<tr><td colspan=&quot;6&quot; style=&quot;text-align:center;color:#aaa;padding:20px&quot;>\u66AB\u7121\u9810\u7D04</td></tr>";
+
+  var doneRows=S.lessonLog.filter(function(l){ return inst==="ALL"||l.instructor===inst; }).sort(function(a,b){ return (b.date+b.time).localeCompare(a.date+a.time); }).slice(0,20);
+  document.getElementById("inst-done").innerHTML = doneRows.length ?
+    doneRows.map(function(l){
+      var rk=l.instructor+(l.course?"|"+l.course:"");
+      var rate=S.instRates[rk]||S.instRates["default|"+l.instructor]||0;
+      var rd=l.status==="DONE"&&rate?el("span",{style:"color:#27ae60;font-weight:700;font-size:12px"},"$"+rate):"";
+      return "<tr>" +
+        "<td>"+fmtDate(l.date)+"</td><td>"+fmtTime(l.time)+"</td>" +
+        "<td>"+l.student+"</td><td>"+sBadge(l.status)+"</td>" +
+        "<td>"+rd+"</td></tr>";
+    }).join("") :
+    "<tr><td colspan=&quot;5&quot; style=&quot;text-align:center;color:#aaa;padding:20px&quot;>\u66AB\u7121\u8A18\u9304</td></tr>";
+
+  renderInstStudents();
+}
+function markDoneFromBooking(sk, inst, date, time) {
+  var msg = "\u78BA\u8A8D " + sk + (date ? " ("+date+")" : "") + " \u8AB2\u5802\u5B8C\u6210\uFF1F";
+  if (!confirm(msg)) return;
+  api("markLessonDone", {studentKey:sk, instructor:inst, calDate:date||"", calTime:time||""}, function(){
+      // Reload data then re-render instructor page immediately
+      var teacher = S.role==="instructor" ? S.instructor : (document.getElementById("inst-selector")||{value:"ALL"}).value;
+      api("getDashboardDataFull", {role:S.role, teacher:teacher, studentName:S.studentName||""}, function(result){
+          S.data      = result.ledger  || [];
+          S.booking   = result.booking || [];
+          S.lessonLog = result.log     || [];
+          renderInstructor(); // refresh both panels
+        })
+        .getDashboardDataFull(S.role, teacher, S.studentName);
+    });
+}
+function renderInstStudents() {
+  var isel=document.getElementById("inst-selector");
+  var inst=S.role==="instructor"?S.instructor:(isel?isel.value:"ALL");
+  var q=(document.getElementById("inst-search")||{value:""}).value.toLowerCase();
+  var rows=S.data.filter(function(r){
+    if(inst!=="ALL"&&r.instructor!==inst)return false;
+    if(q&&!(r.student+r.key).toLowerCase().includes(q))return false;
+    return true;
+  });
+  rows.sort(function(a,b){ return(a.course+a.student).localeCompare(b.course+b.student); });
+  document.getElementById("inst-students").innerHTML = rows.map(function(r){
+    var calT = r.calTitle || (r.key + " | " + r.instructor);
+    var calUrl = "https://calendar.google.com/calendar/u/0/r/eventedit?text=" + encodeURIComponent(calT);
+    var bookBtn = el("a", {
+      href: calUrl,
+      target: "_blank",
+      "class": "btn btn-sm btn-green",
+      style: "font-size:11px;padding:4px 10px;text-decoration:none"
+    }, "Book");
+    return "<tr>" +
+      "<td>"+badge(r.course)+"</td>" +
+      "<td>"+dot(r.instructor)+r.instructor+"</td>" +
+      "<td><strong>"+r.student+"</strong></td>" +
+      "<td>"+r.total+"</td><td>"+r.used+"</td><td>"+r.booked+"</td>" +
+      "<td>"+balBadge(r.balance)+"</td>" +
+      "<td>T"+r.term+"</td><td>"+r.progress+"</td>" +
+      "<td>"+balBadge(r.balance)+"</td>" +
+      "<td style=&quot;font-size:12px;color:#555;max-width:180px&quot;>"+calT+"</td>" +
+      "<td>"+bookBtn+"</td>" +
+    "</tr>";
+  }).join("");
+}
+
+// ---- STUDENT VIEW ------------------------------------------
+function renderStudent() {
+  var name=S.studentName;
+  var rows=S.data.filter(function(r){ return r.student===name; });
+  if (!rows.length) {
+    document.getElementById("student-cards").innerHTML =
+      "<div style=&quot;padding:30px;color:#888;text-align:center&quot;>\u627E\u4E0D\u5230\u8A18\u9304</div>";
+    return;
+  }
+  var phone=rows[0].phone||"";
+  document.getElementById("student-info-card").innerHTML =
+    "<div class=&quot;card&quot;><div class=&quot;card-header&quot;>" +
+    "<span class=&quot;card-title&quot;>"+name+"</span>" +
+    (phone?waBtn(phone,name):"") +
+    "</div><div style=&quot;padding:12px 18px;font-size:13px&quot;>" +
+    "\u8AB2\u7A0B\u6578\u91CF: <strong>"+rows.length+"</strong>" +
+    (phone?" &nbsp; \u96FB\u8A71: <strong>"+phone+"</strong>":"") +
+    "</div></div>";
+  document.getElementById("student-cards").innerHTML = rows.map(function(r){
+    var pct=r.total?Math.min(100,Math.round(r.used/r.total*100)):0;
+    var col=pct>=80?"#e74c3c":pct>=50?"#e67e22":"#4da6ff";
+    var cs=gc(r.course);
+    return "<div class=&quot;s-card&quot; style=&quot;border-top-color:"+cs.bg+"&quot;>" +
+      "<div style=&quot;display:flex;justify-content:space-between;margin-bottom:10px&quot;>" +
+        "<div>"+badge(r.course)+"<div style=&quot;font-size:12px;color:#888;margin-top:4px&quot;>"+dot(r.instructor)+r.instructor+"</div></div>" +
+        balBadge(r.balance) +
+      "</div>" +
+      "<div style=&quot;font-size:13px;line-height:2;color:#555&quot;>" +
+        "Term T"+r.term+" &nbsp; "+r.progress+"<br>" +
+        "\u5DF2\u5B8C\u6210 "+r.used+" &nbsp; \u5DF2\u9810\u7D04 "+r.booked+"<br>" +
+        payBadge(r.payStatus,r.phone,r.student,r.course) +
+      "</div>" +
+      "<div style=&quot;margin-top:10px&quot;>" +
+        "<div style=&quot;height:7px;background:#eee;border-radius:4px;overflow:hidden&quot;>" +
+          "<div style=&quot;height:100%;width:"+pct+"%;background:"+col+";border-radius:4px&quot;></div>" +
+        "</div></div></div>";
+  }).join("");
+}
+
+</script>
+</body>
+</html>
