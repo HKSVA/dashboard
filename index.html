@@ -709,8 +709,7 @@ api("getInstructorList", {}, function(list) {
         return el("option",{value:n}, n);
       }).join("");
     }
-  })
-  .getInstructorList();
+  });
 
 // ---- LOGIN / LOGOUT ----------------------------------------
 function doLogin() {
@@ -1096,8 +1095,7 @@ function loadPayments() {
           "<td>"+rcpt+"</td>" +
         "</tr>";
       }).join("");
-    })
-    .getPaymentWithSplit(filter);
+    });
 }
 function openAddPayment() {
   var t=new Date();
@@ -1144,7 +1142,7 @@ function loadRevenueSummary() {
   var sd=document.getElementById("split-summary");
   if(sd) sd.innerHTML="<div class=&quot;spinner&quot; style=&quot;width:20px;height:20px;margin:16px auto&quot;></div>";
   var tw=document.getElementById("split-table-wrap"); if(tw) tw.innerHTML="";
-  api("getRevenueReport", {yearMonth:ym}, renderRevenueReport){ if(sd) sd.innerHTML=el("p",{style:"color:#e74c3c"},""+e); });
+  api("getRevenueReport", {yearMonth:ym}, renderRevenueReport, function(e){ if(sd) sd.innerHTML=el("p",{style:"color:#e74c3c"},""+e); });
 }
 function renderRevenueReport(data) {
   if(!data) return;
@@ -1237,8 +1235,7 @@ function loadPayrollData() {
           "<td>$"+r.rate+"</td>" +
           "<td><strong>$"+r.pay+"</strong></td></tr>";
       }).join("");
-    }){ if(ps) ps.innerHTML=el("p",{style:"color:#e74c3c"},""+e); })
-    .getPayrollData(m);
+    }, function(e){ if(ps) ps.innerHTML=el("p",{style:"color:#e74c3c"},""+e); });
 }
 function exportPayroll() {
   var m=(document.getElementById("payroll-month")||{value:""}).value;
@@ -1306,8 +1303,7 @@ function markDoneFromBooking(sk, inst, date, time) {
           S.booking   = result.booking || [];
           S.lessonLog = result.log     || [];
           renderInstructor(); // refresh both panels
-        })
-        .getDashboardDataFull(S.role, teacher, S.studentName);
+        });
     });
 }
 function renderInstStudents() {
