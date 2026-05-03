@@ -671,6 +671,48 @@ function applyUserRole(role, instructor, email) {
   window._detectedInstructor = instructor || "";
 }
 
+// Read role from URL parameter ?inst=Yip
+// DOMContentLoaded ensures DOM is ready before manipulating elements
+document.addEventListener("DOMContentLoaded", function() {
+  var urlParams = new URLSearchParams(window.location.search);
+  var urlInst = urlParams.get("inst") || "";
+
+  if (urlInst) {
+    var knownNames = ["Yip","Chiling","Crystal","Guddy","Mellissa","Kenny","Yan","Tim"];
+    var instName = urlInst.charAt(0).toUpperCase() + urlInst.slice(1).toLowerCase();
+    for (var ki=0; ki<knownNames.length; ki++) {
+      if (knownNames[ki].toLowerCase() === urlInst.toLowerCase()) {
+        instName = knownNames[ki]; break;
+      }
+    }
+    S.role = "instructor";
+    S.instructor = instName;
+    document.getElementById("login-wrap").style.display = "none";
+    document.getElementById("app-wrap").style.display = "";
+    document.getElementById("lbl-user").textContent = instName;
+    buildNav();
+    loadAllData();
+  } else {
+    api("getInstructorList", {}, function(list) {
+      var el2 = document.getElementById("sel-instructor");
+      if (el2 && el2.options.length <= 1) {
+        (list||[]).forEach(function(n){ el2.appendChild(new Option(n,n)); });
+      }
+    });
+  }
+});
+
+api("getInstructorList", {}, function(list) {
+    var el2 = document.getElementById("sel-instructor");
+    if (el2.options.length <= 1) {
+      el2.innerHTML = list.map(function(n){
+        return el("option",{value:n}, n);
+      }).join("");
+    }
+  })
+  .getInstructorList();
+
+// ---- LOGIN / LOGOUT ----------------------------------------
 function doLogin() {
   // Use detected role from getMyRole() if available (locked)
   S.role = window._detectedRole || document.getElementById("sel-role").value;
@@ -757,54 +799,9 @@ function loadAllData() {
                S.role==="student"    ? "student" :
                S.role==="account"    ? "account-payments" : "admin-overview";
       showPage(dp);
-    }){
+    }, function(err) {
       document.getElementById("loading-msg").innerHTML = el("p",{style:"color:#e74c3c"},""+err);
-    })
-    .getDashboardDataFull(S.role, teacher, S.studentName);
-}
-
-// Read role from URL parameter ?inst=Yip
-var urlParams = new URLSearchParams(window.location.search);
-var urlInst = urlParams.get("inst") || "";
-
-if (urlInst) {
-  // Instructor URL: ?inst=Yip - AUTO LOGIN, skip login page
-  var knownNames = ["Yip","Chiling","Crystal","Guddy","Mellissa","Kenny","Yan","Tim"];
-  var instName = urlInst.charAt(0).toUpperCase() + urlInst.slice(1).toLowerCase();
-  for (var ki=0; ki<knownNames.length; ki++) {
-    if (knownNames[ki].toLowerCase() === urlInst.toLowerCase()) {
-      instName = knownNames[ki]; break;
-    }
-  }
-  S.role = "instructor";
-  S.instructor = instName;
-  document.getElementById("login-wrap").style.display = "none";
-  document.getElementById("app-wrap").style.display = "";
-  document.getElementById("lbl-user").textContent = instName;
-  buildNav();
-  loadAllData();
-} else {
-  // No ?inst= - show login page, load instructor list for selector
-  api("getInstructorList", {}, function(list) {
-    var el2 = document.getElementById("sel-instructor");
-    if (el2 && el2.options.length <= 1) {
-      (list||[]).forEach(function(n){ el2.appendChild(new Option(n,n)); });
-    }
-  });
-}
-
-      if (S.courses.length) S.currentCourse = S.courses[0];
-      document.getElementById("loading-msg").style.display = "none";
-      buildFilters();
-      api("getInstRates", {}, function(r){ S.instRates=r||{}; });
-      var dp = S.role==="instructor" ? "instructor" :
-               S.role==="student"    ? "student" :
-               S.role==="account"    ? "account-payments" : "admin-overview";
-      showPage(dp);
-    }){
-      document.getElementById("loading-msg").innerHTML = el("p",{style:"color:#e74c3c"},""+err);
-    })
-    .getDashboardDataFull(S.role, teacher, S.studentName);
+    });
 }
 
 function buildFilters() {
