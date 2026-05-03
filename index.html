@@ -644,8 +644,8 @@ function onRoleChange() {
   document.getElementById("f-student").style.display    = r==="student"    ? "" : "none";
 }
 
-// Read role from URL parameter
-// Fall back to getMyRole() email check
+// Use SERVER_ROLE if injected by doGet() (most reliable)
+// Otherwise fall back to getMyRole() email check
 function applyUserRole(role, instructor, email) {
   var hint = document.getElementById("login-hint");
   if (!role) return; // no role - show normal login
@@ -671,36 +671,6 @@ function applyUserRole(role, instructor, email) {
   window._detectedInstructor = instructor || "";
 }
 
-// Read role from URL parameter ?inst=Yip
-var urlParams = new URLSearchParams(window.location.search);
-var urlInst = urlParams.get("inst") || "";
-var urlPage = urlParams.get("page") || "";
-
-if (urlInst) {
-  // Instructor URL: ?inst=Yip
-  // Capitalize properly
-  var knownNames = ["Yip","Chiling","Crystal","Guddy","Mellissa","Kenny","Yan","Tim"];
-  var instName = urlInst.charAt(0).toUpperCase() + urlInst.slice(1).toLowerCase();
-  for (var ki=0; ki<knownNames.length; ki++) {
-    if (knownNames[ki].toLowerCase() === urlInst.toLowerCase()) {
-      instName = knownNames[ki]; break;
-    }
-  }
-  applyUserRole("instructor", instName, "");
-}
-// If no ?inst= param, show normal login page (Admin/Account select role manually)
-
-api("getInstructorList", {}, function(list) {
-    var el2 = document.getElementById("sel-instructor");
-    if (el2.options.length <= 1) {
-      el2.innerHTML = list.map(function(n){
-        return el("option",{value:n}, n);
-      }).join("");
-    }
-  })
-  .getInstructorList();
-
-// ---- LOGIN / LOGOUT ----------------------------------------
 function doLogin() {
   // Use detected role from getMyRole() if available (locked)
   S.role = window._detectedRole || document.getElementById("sel-role").value;
@@ -779,6 +749,50 @@ function loadAllData() {
       S.lessonLog= result.log     || [];
       var seen = {};
       S.data.forEach(function(r){ if(!seen[r.course]){seen[r.course]=true;S.courses.push(r.course);} });
+      if (S.courses.length) S.currentCourse = S.courses[0];
+      document.getElementById("loading-msg").style.display = "none";
+      buildFilters();
+      api("getInstRates", {}, function(r){ S.instRates=r||{}; });
+      var dp = S.role==="instructor" ? "instructor" :
+               S.role==="student"    ? "student" :
+               S.role==="account"    ? "account-payments" : "admin-overview";
+      showPage(dp);
+    }){
+      document.getElementById("loading-msg").innerHTML = el("p",{style:"color:#e74c3c"},""+err);
+    })
+    .getDashboardDataFull(S.role, teacher, S.studentName);
+}
+
+// Read role from URL parameter ?inst=Yip
+var urlParams = new URLSearchParams(window.location.search);
+var urlInst = urlParams.get("inst") || "";
+
+if (urlInst) {
+  // Instructor URL: ?inst=Yip - AUTO LOGIN, skip login page
+  var knownNames = ["Yip","Chiling","Crystal","Guddy","Mellissa","Kenny","Yan","Tim"];
+  var instName = urlInst.charAt(0).toUpperCase() + urlInst.slice(1).toLowerCase();
+  for (var ki=0; ki<knownNames.length; ki++) {
+    if (knownNames[ki].toLowerCase() === urlInst.toLowerCase()) {
+      instName = knownNames[ki]; break;
+    }
+  }
+  S.role = "instructor";
+  S.instructor = instName;
+  document.getElementById("login-wrap").style.display = "none";
+  document.getElementById("app-wrap").style.display = "";
+  document.getElementById("lbl-user").textContent = instName;
+  buildNav();
+  loadAllData();
+} else {
+  // No ?inst= - show login page, load instructor list for selector
+  api("getInstructorList", {}, function(list) {
+    var el2 = document.getElementById("sel-instructor");
+    if (el2 && el2.options.length <= 1) {
+      (list||[]).forEach(function(n){ el2.appendChild(new Option(n,n)); });
+    }
+  });
+}
+
       if (S.courses.length) S.currentCourse = S.courses[0];
       document.getElementById("loading-msg").style.display = "none";
       buildFilters();
