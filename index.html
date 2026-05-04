@@ -1293,30 +1293,35 @@ function renderInstructor() {
   renderInstStudents();
 }
 function markDoneFromBooking(sk, inst, date, time) {
-  var msg = "\u78BA\u8A8D " + sk + (date ? " ("+date+")" : "") + " \u8AB2\u5802\u5B8C\u6210\uFF1F";
-  if (!confirm(msg)) return;
-  // Show loading state on button
-  var btn = document.querySelector("[data-sk=\""+sk+"\"][data-inst=\""+inst+"\"][data-date=\""+date+"\"]");
+  // Find and disable button immediately to show feedback
+  var btn = document.querySelector(
+    "[data-action=\"done\"][data-sk=\""+sk+"\"][data-inst=\""+inst+"\"]"
+  );
   if (btn) { btn.textContent = "..."; btn.disabled = true; }
-  api("markLessonDone", {studentKey:sk, instructor:inst, calDate:date||"", calTime:time||""},
+
+  api("markLessonDone",
+    {studentKey:sk, instructor:inst, calDate:date||"", calTime:time||""},
     function(result){
-      // Success - reload data
-      var teacher = S.role==="instructor" ? S.instructor : (document.getElementById("inst-selector")||{value:"ALL"}).value;
-      api("getDashboardDataFull", {role:S.role, teacher:teacher, studentName:S.studentName||""},
-        function(result){
-          S.data      = result.ledger  || [];
-          S.booking   = result.booking || [];
-          S.lessonLog = result.log     || [];
+      // Success - reload data immediately
+      var teacher = S.role==="instructor"
+        ? S.instructor
+        : (document.getElementById("inst-selector")||{value:"ALL"}).value;
+      api("getDashboardDataFull",
+        {role:S.role, teacher:teacher, studentName:S.studentName||""},
+        function(res){
+          S.data      = res.ledger  || [];
+          S.booking   = res.booking || [];
+          S.lessonLog = res.log     || [];
           renderInstructor();
         },
         function(err){
-          alert("\u8F09\u5165\u5931\u6557: " + err);
+          alert("Error loading: " + err);
           if (btn) { btn.textContent = "Done"; btn.disabled = false; }
         }
       );
     },
     function(err){
-      alert("\u6A19\u8A18\u5931\u6557: " + err);
+      alert("Error marking done: " + err);
       if (btn) { btn.textContent = "Done"; btn.disabled = false; }
     }
   );
@@ -1391,6 +1396,13 @@ function renderStudent() {
           "<div style=&quot;height:100%;width:"+pct+"%;background:"+col+";border-radius:4px&quot;></div>" +
         "</div></div></div>";
   }).join("");
+}
+
+
+// Debug helper - call testAPI() in console to test connection
+function testAPI() {
+  console.log("Testing API at: " + API_URL);
+  api("getInstructorList", {}, function(d){ console.log("✅ API OK:", d); }, function(e){ console.error("❌ API FAIL:", e); });
 }
 
 </script>
