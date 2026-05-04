@@ -1295,16 +1295,31 @@ function renderInstructor() {
 function markDoneFromBooking(sk, inst, date, time) {
   var msg = "\u78BA\u8A8D " + sk + (date ? " ("+date+")" : "") + " \u8AB2\u5802\u5B8C\u6210\uFF1F";
   if (!confirm(msg)) return;
-  api("markLessonDone", {studentKey:sk, instructor:inst, calDate:date||"", calTime:time||""}, function(){
-      // Reload data then re-render instructor page immediately
+  // Show loading state on button
+  var btn = document.querySelector("[data-sk=\""+sk+"\"][data-inst=\""+inst+"\"][data-date=\""+date+"\"]");
+  if (btn) { btn.textContent = "..."; btn.disabled = true; }
+  api("markLessonDone", {studentKey:sk, instructor:inst, calDate:date||"", calTime:time||""},
+    function(result){
+      // Success - reload data
       var teacher = S.role==="instructor" ? S.instructor : (document.getElementById("inst-selector")||{value:"ALL"}).value;
-      api("getDashboardDataFull", {role:S.role, teacher:teacher, studentName:S.studentName||""}, function(result){
+      api("getDashboardDataFull", {role:S.role, teacher:teacher, studentName:S.studentName||""},
+        function(result){
           S.data      = result.ledger  || [];
           S.booking   = result.booking || [];
           S.lessonLog = result.log     || [];
-          renderInstructor(); // refresh both panels
-        });
-    });
+          renderInstructor();
+        },
+        function(err){
+          alert("\u8F09\u5165\u5931\u6557: " + err);
+          if (btn) { btn.textContent = "Done"; btn.disabled = false; }
+        }
+      );
+    },
+    function(err){
+      alert("\u6A19\u8A18\u5931\u6557: " + err);
+      if (btn) { btn.textContent = "Done"; btn.disabled = false; }
+    }
+  );
 }
 function renderInstStudents() {
   var isel=document.getElementById("inst-selector");
