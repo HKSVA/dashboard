@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVA Student Manager</title>
+<?!= include('Styles') ?>
+<style>
+.sm-header{background:#1a1a1a;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.sm-header h1{color:#fff;font-size:16px;font-weight:700}
+.sm-header h1 span{color:#4da6ff}
+.sm-content{padding:20px;max-width:1200px;margin:0 auto}
+.num-cell{color:#bbb;font-size:12px;text-align:right;width:36px;padding-right:8px}
+</style>
+</head>
+<body>
+
+<div class="sm-header">
+  <h1>SVA <span>學生管理</span></h1>
+  <button class="btn btn-green btn-sm" id="btn-add-student">+ 新增學生</button>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal-bg" id="modal-add-student">
+  <div class="modal">
+    <h3>新增學生</h3>
+    <div class="form-group">
+      <label>學生姓名 *</label>
+      <input id="ns-name" type="text" placeholder="例：琛仔">
+    </div>
+    <div class="form-group">
+      <label>電話 (852XXXXXXXX)</label>
+      <input id="ns-phone" type="text" placeholder="85298765432">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input id="ns-email" type="text">
+    </div>
+    <div class="form-group">
+      <label>付款方式</label>
+      <select id="ns-paytype">
+        <option value="Term">Term</option>
+        <option value="Month">Month</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>目前課程 (E欄)</label>
+      <select id="ns-current-course">
+        <option value="">-- 請選擇 --</option>
+        <option>1on1</option>
+        <option>Evaluation</option>
+        <option>Jarie</option>
+        <option>Theatre</option>
+        <option>WT</option>
+        <option>Yearly</option>
+        <option>Choir</option>
+        <option>Trainee</option>
+        <option>Tech</option>
+        <option>Focus</option>
+        <option>練聲小組</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>目前老師 (F欄)</label>
+      <select id="ns-teacher">
+        <option value="">-- 請選擇 --</option>
+        <option>Guddy</option>
+        <option>Mellissa</option>
+        <option>Crystal</option>
+        <option>Yip</option>
+        <option>Chiling</option>
+        <option>Kenny</option>
+        <option>Yan</option>
+        <option>Tim</option>
+        <option>Lui</option>
+        <option>Jaire</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>其他課程 (如有)</label>
+      <input id="ns-other-course" type="text" placeholder="例：Jarie, songwriting M">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="btn-cancel-modal">取消</button>
+      <button class="btn btn-primary" id="btn-submit-student">新增</button>
+    </div>
+  </div>
+</div>
+
+<div class="sm-content">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">學生列表</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="stu-search" placeholder="搜尋姓名..."
+          style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;min-width:160px">
+        <select id="stu-f-course"
+          style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+          <option value="">全部課程</option>
+          <option>1on1</option><option>Evaluation</option><option>Jarie</option>
+          <option>Theatre</option><option>WT</option><option>Yearly</option>
+          <option>Choir</option><option>Trainee</option><option>Tech</option>
+          <option>Focus</option><option>練聲小組</option>
+        </select>
+        <select id="stu-f-teacher"
+          style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+          <option value="">全部老師</option>
+          <option>Guddy</option><option>Mellissa</option><option>Crystal</option>
+          <option>Yip</option><option>Chiling</option><option>Kenny</option>
+          <option>Yan</option><option>Tim</option><option>Lui</option><option>Jaire</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="loading-msg" style="text-align:center;padding:40px;color:#aaa">
+      <div class="spinner"></div>
+      載入中...
+    </div>
+
+    <div class="tbl-wrap" id="table-wrap" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th class="num-cell">#</th>
+            <th>學生</th>
+            <th>目前課程</th>
+            <th>老師</th>
+            <th>其他課程</th>
+            <th>Credit 記錄</th>
+            <th>WA</th>
+          </tr>
+        </thead>
+        <tbody id="stu-tbody"></tbody>
+      </table>
+    </div>
+
+    <div style="padding:10px 18px;color:#888;font-size:12px" id="stu-count"></div>
+  </div>
+</div>
+
+<?!= include('JavaScript') ?>
+<script>
+var API_URL = "https://script.google.com/macros/s/AKfycbzDGKoo2XPcKEfYkC0UX83fZzIzB5_D0x8IFa3g8KUfIfz3XJ6AaGZJh_fkQqomWcce/exec";
+function api(action, params, successCb, failureCb) {
+  fetch(API_URL, {method:"POST", headers:{"Content-Type":"text/plain"}, body:JSON.stringify({action:action, params:params||{}})})
+  .then(function(r){return r.json();})
+  .then(function(res){ if(res.ok){if(successCb)successCb(res.data);}else{if(failureCb)failureCb(new Error(res.error));else console.error("API error:",res.error);} })
+  .catch(function(err){if(failureCb)failureCb(err);else console.error("Network error:",err);});
+}
+// ============================================================
+// StudentManager inline script
+// RULES: no single quotes in JS strings, no backslash-quotes
+// ============================================================
+
+var ALL_STUDENTS = [];
+
+var IC_SM = {
+  Yip:"#e67c73", Yan:"#f6bf26", Crystal:"#f9bf04",
+  Guddy:"#039be5", Chiling:"#3f51b5", Mellissa:"#7986cb",
+  Kenny:"#8e24aa", Tim:"#616161", Lui:"#33b679", Jaire:"#f09300"
+};
+
+// ---- Event listeners (no inline onclick) -------------------
+document.getElementById("btn-add-student").addEventListener("click", function(){
+  document.getElementById("modal-add-student").classList.add("open");
+});
+document.getElementById("btn-cancel-modal").addEventListener("click", function(){
+  document.getElementById("modal-add-student").classList.remove("open");
+});
+document.getElementById("btn-submit-student").addEventListener("click", function(){
+  submitStudent();
+});
+document.getElementById("stu-search").addEventListener("input", renderList);
+document.getElementById("stu-f-course").addEventListener("change", renderList);
+document.getElementById("stu-f-teacher").addEventListener("change", renderList);
+
+// WA click delegation for dynamically added buttons
+document.addEventListener("click", function(e) {
+  var t = e.target;
+  while (t && t !== document.body) {
+    if (t.getAttribute("data-sm-action") === "wa") {
+      var phone   = t.getAttribute("data-phone")   || "";
+      var student = t.getAttribute("data-student")  || "";
+      var msg = "Dear " + student + ", please arrange payment for your upcoming class fee, thank you!";
+      window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
+      return;
+    }
+    t = t.parentElement;
+  }
+});
+
+// ---- Load data on page open --------------------------------
+api("getStudentList", {}, function(data) {
+    ALL_STUDENTS = data || [];
+    document.getElementById("loading-msg").style.display = "none";
+    document.getElementById("table-wrap").style.display  = "";
+    renderList();
+  })
+  .withFailureHandler(function(err) {
+    document.getElementById("loading-msg").innerHTML =
+      "<p style=&quot;color:#e74c3c&quot;>" + err + "</p>";
+  })
+);
+
+// ---- Render list -------------------------------------------
+function renderList() {
+  var q    = document.getElementById("stu-search").value.toLowerCase();
+  var fCrs = document.getElementById("stu-f-course").value;
+  var fTch = document.getElementById("stu-f-teacher").value;
+
+  var list = ALL_STUDENTS.filter(function(s) {
+    var nameOk = !q
+      || s.name.toLowerCase().includes(q)
+      || (s.fullName || "").toLowerCase().includes(q);
+    var crsOk  = !fCrs
+      || (s.currentCourse || "").includes(fCrs)
+      || (s.otherCourse   || "").includes(fCrs);
+    var tchOk  = !fTch
+      || (s.courses || []).some(function(c) { return c.instructor === fTch; });
+    return nameOk && crsOk && tchOk;
+  });
+
+  document.getElementById("stu-count").textContent =
+    "\u986F\u793A " + list.length + " / " + ALL_STUDENTS.length + " \u4F4D\u5B78\u751F";
+
+  var CC_SM = {
+    Elite:  {lt:"#e8f4fd", tc:"#1a7fc1"},
+    Perf:   {lt:"#f3e5f5", tc:"#6a1b9a"},
+    Choir:  {lt:"#fff3e0", tc:"#e65100"},
+    "1on1": {lt:"#e8f5e9", tc:"#1b5e20"}
+  };
+  function getCC(c) { return CC_SM[c] || {lt:"#f0f0f0", tc:"#555"}; }
+
+  document.getElementById("stu-tbody").innerHTML = list.map(function(s, idx) {
+    // Credit badges using JSON.stringify for safe attribute values
+    var credits = (s.courses || []).map(function(c) {
+      var cs  = getCC(c.course);
+      var lbl = c.instCode ? c.course + "/" + c.instCode : c.course;
+      var bc  = c.balance < 0 ? "#e74c3c" : c.balance <= 2 ? "#e67e22" : "#27ae60";
+      var outerStyle = "background:" + cs.lt + ";color:" + cs.tc + ";font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;display:inline-block;margin:1px";
+      var innerStyle = "color:" + bc;
+      return "<span style=" + JSON.stringify(outerStyle) + ">" +
+        lbl + ": <span style=" + JSON.stringify(innerStyle) + ">" + c.balance + "</span></span>";
+    }).join(" ");
+
+    // Teacher dots - simple pill format, no nested style quotes
+    var teachers = [];
+    (s.courses || []).forEach(function(c) {
+      if (teachers.indexOf(c.instructor) < 0) teachers.push(c.instructor);
+    });
+    var tchDots = teachers.map(function(t) {
+      var col = IC_SM[t] || "#999";
+      var dot = "<span style=" + JSON.stringify("display:inline-block;width:9px;height:9px;border-radius:50%;background:"+col+";margin-right:4px;vertical-align:middle") + "></span>";
+      return "<span style=" + JSON.stringify("display:inline-flex;align-items:center;margin-right:10px;font-size:12px;white-space:nowrap") + ">" + dot + t + "</span>";
+    }).join("");
+
+    // WA button -- uses data attribute, no inline onclick
+    var waB = "";
+    if (s.phone) {
+      waB = "<button class=" + JSON.stringify("btn btn-sm") +
+        " style=" + JSON.stringify("background:#25D366;color:#fff;border-color:#25D366;padding:3px 8px;font-size:11px") +
+        " data-sm-action=" + JSON.stringify("wa") +
+        " data-phone=" + JSON.stringify(s.phone) +
+        " data-student=" + JSON.stringify(s.name) + ">WA</button>";
+    }
+
+    var fullNameSpan = s.fullName
+      ? " <small style=" + JSON.stringify("color:#bbb") + ">" + s.fullName + "</small>"
+      : "";
+
+    return "<tr>" +
+      "<td class=&quot;num-cell&quot;>" + (idx + 1) + "</td>" +
+      "<td><strong>" + s.name + "</strong>" + fullNameSpan + "</td>" +
+      "<td style=&quot;font-size:12px;color:#1a7fc1;font-weight:600&quot;>" +
+        (s.currentCourse || "") + "</td>" +
+      "<td>" + tchDots + "</td>" +
+      "<td style=&quot;font-size:12px;color:#888&quot;>" + (s.otherCourse || "") + "</td>" +
+      "<td>" + credits + "</td>" +
+      "<td>" + waB + "</td>" +
+    "</tr>";
+  }).join("");
+}
+
+// ---- Submit new student ------------------------------------
+function submitStudent() {
+  var name = document.getElementById("ns-name").value.trim();
+  if (!name) {
+    alert("\u8ACB\u586B\u5165\u5B78\u751F\u59D3\u540D");
+    return;
+  }
+  var btn = document.getElementById("btn-submit-student");
+  btn.disabled = true;
+  btn.textContent = "\u65B0\u589E\u4E2D...";
+
+  api("addStudent", {
+    name: name,
+    phone: document.getElementById("ns-phone").value.trim(),
+    email: document.getElementById("ns-email").value.trim(),
+    payType: document.getElementById("ns-paytype").value,
+    currentCourse: document.getElementById("ns-current-course").value,
+    currentTeacher: document.getElementById("ns-teacher").value,
+    otherCourse: document.getElementById("ns-other-course").value.trim()
+  }, function(r) {
+    btn.disabled = false;
+    btn.textContent = "\u65B0\u589E";
+    alert(r.msg);
+    if (r.ok) {
+      document.getElementById("modal-add-student").classList.remove("open");
+      ["ns-name","ns-phone","ns-email","ns-other-course"].forEach(function(id){
+        document.getElementById(id).value = "";
+      });
+      document.getElementById("ns-current-course").value = "";
+      document.getElementById("ns-teacher").value = "";
+      api("getStudentList", {}, function(data) { ALL_STUDENTS = data || []; renderList(); });
+    }
+  }, function(err) {
+    btn.disabled = false;
+    btn.textContent = "\u65B0\u589E";
+    alert("\u5931\u6557: " + err);
+  });
+}
+</script>
+</body>
+</html>
