@@ -195,12 +195,10 @@ api("getStudentList", {}, function(data) {
     document.getElementById("loading-msg").style.display = "none";
     document.getElementById("table-wrap").style.display  = "";
     renderList();
-  })
-  .withFailureHandler(function(err) {
+  }, function(err) {
     document.getElementById("loading-msg").innerHTML =
-      "<p style=&quot;color:#e74c3c&quot;>" + err + "</p>";
-  })
-);
+      "<p style=\"color:#e74c3c\">" + err + "</p>";
+  });
 
 // ---- Render list -------------------------------------------
 function renderList() {
