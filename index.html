@@ -84,18 +84,14 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
 @media(max-width:700px){.g2{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.main{padding:12px}.topbar{padding:0 10px}}
 </style>
 <script>
-// Hide login page immediately if URL has role/inst param (prevents flash)
+// Immediately check URL - hide login page before DOM renders
 (function(){
   var p = new URLSearchParams(window.location.search);
   if (p.get("inst") || p.get("role")) {
-    document.addEventListener("DOMContentLoaded", function(){
-      var lw = document.getElementById("login-wrap");
-      var aw = document.getElementById("app-wrap");
-      if (lw) lw.style.display = "none";
-      if (aw) aw.style.display = "";
-    });
-    // Also inject style immediately before DOM ready
-    document.write('<style>#login-wrap{display:none!important}</style>');
+    // Inject style tag synchronously - runs before body renders
+    var s = document.createElement("style");
+    s.textContent = "#login-wrap{display:none!important}#app-wrap{display:block!important}";
+    document.head.appendChild(s);
   }
 })();
 </script>
