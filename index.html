@@ -675,9 +675,20 @@ function applyUserRole(role, instructor, email) {
 // DOMContentLoaded ensures DOM is ready before manipulating elements
 document.addEventListener("DOMContentLoaded", function() {
   var urlParams = new URLSearchParams(window.location.search);
-  var urlInst = urlParams.get("inst") || "";
+  var urlInst   = urlParams.get("inst")   || "";
+  var urlRole   = urlParams.get("role")   || "";
+
+  function autoLogin(role, label) {
+    S.role = role;
+    document.getElementById("login-wrap").style.display = "none";
+    document.getElementById("app-wrap").style.display   = "";
+    document.getElementById("lbl-user").textContent     = label;
+    buildNav();
+    loadAllData();
+  }
 
   if (urlInst) {
+    // ?inst=Yip → instructor auto-login
     var knownNames = ["Yip","Chiling","Crystal","Guddy","Mellissa","Kenny","Yan","Tim"];
     var instName = urlInst.charAt(0).toUpperCase() + urlInst.slice(1).toLowerCase();
     for (var ki=0; ki<knownNames.length; ki++) {
@@ -685,14 +696,19 @@ document.addEventListener("DOMContentLoaded", function() {
         instName = knownNames[ki]; break;
       }
     }
-    S.role = "instructor";
     S.instructor = instName;
-    document.getElementById("login-wrap").style.display = "none";
-    document.getElementById("app-wrap").style.display = "";
-    document.getElementById("lbl-user").textContent = instName;
-    buildNav();
-    loadAllData();
+    autoLogin("instructor", instName);
+
+  } else if (urlRole === "admin") {
+    // ?role=admin → admin auto-login
+    autoLogin("admin", "Admin");
+
+  } else if (urlRole === "account") {
+    // ?role=account → account auto-login
+    autoLogin("account", "Account");
+
   } else {
+    // No URL param → show login page
     api("getInstructorList", {}, function(list) {
       var el2 = document.getElementById("sel-instructor");
       if (el2 && el2.options.length <= 1) {
