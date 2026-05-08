@@ -25,7 +25,7 @@ body{font-family:Arial,sans-serif;background:#f0f2f5;color:#1a1a1a;font-size:14p
 .btn-green{background:#27ae60;color:#fff;border-color:#27ae60}
 .main{padding:20px;max-width:1400px;margin:0 auto}
 .page{display:none}.page.active{display:block}
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .metric{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #eee}
 .metric-label{font-size:11px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
 .metric-val{font-size:24px;font-weight:700}
@@ -205,7 +205,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
     <div class="nav" id="main-nav"></div>
     <div class="user-info">
       <span id="lbl-user"></span>
-      <button class="btn btn-sm" style="color:#aaa;border-color:#444;background:transparent" onclick="doLogout()">登出</button>
     </div>
   </div>
 
@@ -227,7 +226,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th></th><th>學生</th><th>課程數</th><th>總覽</th><th>WA</th></tr></thead>
+            <thead><tr><th></th><th>學生</th><th>課程</th><th>Credit 總覽</th><th>付款</th><th>WA</th></tr></thead>
             <tbody id="adm-tbody"></tbody>
           </table>
         </div>
@@ -936,46 +935,49 @@ function renderAdminOverview() {
   Object.keys(map).sort().forEach(function(name) {
     var sd   = map[name];
     var rows = sd.rows;
-    var rid  = "sub-" + name.replace(/[^a-zA-Z0-9]/g, "-");
 
-    var summary = rows.map(function(r){
+    // Build inline course badges with balance
+    var courseBadges = rows.map(function(r){
       var cs  = gc(r.course);
-      var code= r.instCode ? r.course+"/"+r.instCode : r.course;
       var bc  = r.balance<0?"#e74c3c":r.balance<=2?"#e67e22":"#27ae60";
       return el("span",{style:"background:"+cs.lt+";color:"+cs.tc+
-        ";font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;display:inline-block;margin:1px"},
-        code+": "+el("span",{style:"color:"+bc},r.balance));
-    }).join(" ");
+        ";font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;display:inline-block;margin:1px 2px 1px 0"},
+        r.course+": "+el("span",{style:"color:"+bc+";font-weight:700"},r.balance));
+    }).join("");
+
+    // Instructor dots
+    var instDots = rows.map(function(r){
+      return dot(r.instructor)+r.instructor;
+    }).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(" ");
+
+    // Payment: simplified - only ✓ Paid or Notice (clickable WA)
+    var payHtml = rows.map(function(r){
+      if (r.payStatus === "Paid") {
+        return el("span",{"class":"pay-paid",style:"font-size:11px"},"\u2713 Paid");
+      }
+      if (r.payStatus === "Notice") {
+        if (sd.phone) {
+          return el("button",{
+            "class":"pay-notice",
+            "data-action":"wa",
+            "data-phone": sd.phone,
+            "data-student": name,
+            "data-course": r.course
+          }, "\u26A0 Notice");
+        }
+        return el("span",{"class":"pay-notice"},"\u26A0 Notice");
+      }
+      return ""; // hide Record
+    }).filter(Boolean).join(" ");
 
     html += "<tr>" +
-      "<td>" + el("span",{"class":"sub-toggle","data-action":"sub","data-id":rid},"\u25B6") + "</td>" +
-      "<td><strong>"+name+"</strong></td>" +
-      "<td>" + el("span",{"class":"badge",style:"background:#f0f0f0;color:#555"}, rows.length+" \u8AB2") + "</td>" +
-      "<td>"+summary+"</td>" +
+      "<td style=\"width:20px;color:#bbb\"></td>" +
+      "<td><strong>"+name+"</strong><div style=\"font-size:11px;color:#999;margin-top:2px\">"+instDots+"</div></td>" +
+      "<td style=\"font-size:12px;color:#555\">"+rows.length+" 課</td>" +
+      "<td>"+courseBadges+"</td>" +
+      "<td>"+payHtml+"</td>" +
       "<td>"+waBtn(sd.phone, name)+"</td>" +
-    "</tr>" +
-    "<tr class=&quot;sub-table-row&quot; id=&quot;"+rid+"&quot; style=&quot;display:none&quot;><td colspan=&quot;5&quot;>" +
-      "<table class=&quot;sub-table&quot;>" +
-      "<tr>" +
-        "<td style=&quot;font-weight:700;color:#888;font-size:11px;padding-left:32px&quot;>Course</td>" +
-        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>\u5C0E\u5E2B</td>" +
-        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>Balance</td>" +
-        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>Term</td>" +
-        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>\u9032\u5EA6</td>" +
-        "<td style=&quot;font-weight:700;color:#888;font-size:11px&quot;>\u4ED8\u6B3E</td>" +
-      "</tr>" +
-      rows.map(function(r){
-        return "<tr>" +
-          "<td>"+badge(r.course)+"</td>" +
-          "<td>"+dot(r.instructor)+r.instructor+"</td>" +
-          "<td>"+balBadge(r.balance)+"</td>" +
-          "<td>T"+r.term+"</td>" +
-          "<td>"+r.progress+"</td>" +
-          "<td>"+payBadge(r.payStatus, r.phone, r.student, r.course)+"</td>" +
-        "</tr>";
-      }).join("") +
-      "</table>" +
-    "</td></tr>";
+    "</tr>";
   });
   document.getElementById("adm-tbody").innerHTML = html;
 }
