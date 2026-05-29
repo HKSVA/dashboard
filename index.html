@@ -1282,6 +1282,7 @@ function exportPayroll() {
 function renderInstructor() {
   var isel=document.getElementById("inst-selector");
   var inst=S.role==="instructor"?S.instructor:(isel?isel.value:"ALL");
+  console.log('[renderInstructor] inst='+inst+' S.role='+S.role+' S.instructor='+S.instructor+' S.data.len='+S.data.length+' S.booking.len='+S.booking.length);
   var myData=S.data.filter(function(r){ return inst==="ALL"||r.instructor===inst; });
   // Month filter for done list
   var mfSel = document.getElementById("inst-month-filter");
@@ -1429,6 +1430,8 @@ function renderInstStudents() {
     if(q&&!(r.student+r.key).toLowerCase().includes(q))return false;
     return true;
   });
+  console.log('[renderInstStudents] inst='+inst+' S.data.len='+S.data.length+' rows.len='+rows.length);
+  if(S.data.length>0) console.log('[renderInstStudents] sample r.instructor='+S.data[0].instructor+' r.student='+S.data[0].student);
   rows.sort(function(a,b){ return(a.course+a.student).localeCompare(b.course+b.student); });
   document.getElementById("inst-students").innerHTML = rows.map(function(r){
     var calT = r.calTitle || (r.key + " | " + r.instructor);
