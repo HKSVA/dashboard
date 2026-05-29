@@ -1323,36 +1323,41 @@ function renderInstructor() {
   renderInstStudents();
 }
 function markDoneFromBooking(sk, inst, date, time) {
-  // Find and disable button immediately to show feedback
+  // Find button using all 4 data attributes to get exact row
   var btn = document.querySelector(
-    "[data-action=\"done\"][data-sk=\""+sk+"\"][data-inst=\""+inst+"\"]"
+    "[data-action=\"done\"][data-sk=\""+sk+"\"]:not([disabled])"
   );
-  if (btn) { btn.textContent = "..."; btn.disabled = true; }
+  // Narrow down if multiple buttons exist (same student, different times)
+  var allBtns = document.querySelectorAll("[data-action=\"done\"][data-sk=\""+sk+"\"][data-inst=\""+inst+"\"]");
+  for (var i=0; i<allBtns.length; i++) {
+    if (allBtns[i].getAttribute("data-date")===date && allBtns[i].getAttribute("data-time")===time) {
+      btn = allBtns[i]; break;
+    }
+  }
+  var row = btn ? btn.closest("tr") : null;
+
+  // Immediate feedback
+  if (btn) { btn.textContent = "\u2713 \u63d0\u4ea4\u4e2d..."; btn.disabled = true; btn.style.background = "#888"; }
 
   api("markLessonDone",
     {studentKey:sk, instructor:inst, calDate:date||"", calTime:time||""},
     function(result){
-      // Success - reload data immediately
-      var teacher = S.role==="instructor"
-        ? S.instructor
-        : (document.getElementById("inst-selector")||{value:"ALL"}).value;
-      api("getDashboardDataFull",
-        {role:S.role, teacher:teacher, studentName:S.studentName||""},
-        function(res){
-          S.data      = res.ledger  || [];
-          S.booking   = res.booking || [];
-          S.lessonLog = res.log     || [];
-          renderInstructor();
-        },
-        function(err){
-          alert("Error loading: " + err);
-          if (btn) { btn.textContent = "Done"; btn.disabled = false; }
-        }
-      );
+      // Instantly remove the row with fade
+      if (row) {
+        row.style.transition = "opacity 0.35s";
+        row.style.opacity = "0";
+        setTimeout(function(){ row.remove(); }, 350);
+      }
+      // Update memory so metrics re-render correctly
+      S.booking = S.booking.filter(function(b){
+        return !(b.student===sk && b.instructor===inst && b.date===date && b.time===time);
+      });
+      S.lessonLog.unshift({date:date, time:time, student:sk, instructor:inst, status:"DONE"});
+      renderInstructor();
     },
     function(err){
       alert("Error marking done: " + err);
-      if (btn) { btn.textContent = "Done"; btn.disabled = false; }
+      if (btn) { btn.textContent = "Done"; btn.disabled = false; btn.style.background = ""; }
     }
   );
 }
