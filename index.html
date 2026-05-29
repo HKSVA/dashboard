@@ -1323,18 +1323,28 @@ function renderInstructor() {
   renderInstStudents();
 }
 function markDoneFromBooking(sk, inst, date, time) {
-  // Find button using all 4 data attributes to get exact row
-  var btn = document.querySelector(
-    "[data-action=\"done\"][data-sk=\""+sk+"\"]:not([disabled])"
-  );
-  // Narrow down if multiple buttons exist (same student, different times)
-  var allBtns = document.querySelectorAll("[data-action=\"done\"][data-sk=\""+sk+"\"][data-inst=\""+inst+"\"]");
+  // Find the exact button by all 4 attributes
+  var allBtns = document.querySelectorAll("[data-action=\"done\"]");
+  var btn = null;
   for (var i=0; i<allBtns.length; i++) {
-    if (allBtns[i].getAttribute("data-date")===date && allBtns[i].getAttribute("data-time")===time) {
+    if (allBtns[i].getAttribute("data-sk")===sk &&
+        allBtns[i].getAttribute("data-inst")===inst &&
+        allBtns[i].getAttribute("data-date")===date &&
+        allBtns[i].getAttribute("data-time")===time) {
       btn = allBtns[i]; break;
     }
   }
   var row = btn ? btn.closest("tr") : null;
+
+  // Get course BEFORE filtering booking
+  var thisCourse = "";
+  for (var bi=0; bi<S.booking.length; bi++) {
+    var bb = S.booking[bi];
+    if (String(bb.student)===String(sk) && String(bb.instructor)===String(inst) &&
+        String(bb.date)===String(date) && String(bb.time)===String(time)) {
+      thisCourse = bb.course || ""; break;
+    }
+  }
 
   // Immediate feedback
   if (btn) { btn.textContent = "\u2713 \u63d0\u4ea4\u4e2d..."; btn.disabled = true; btn.style.background = "#888"; }
@@ -1342,17 +1352,27 @@ function markDoneFromBooking(sk, inst, date, time) {
   api("markLessonDone",
     {studentKey:sk, instructor:inst, calDate:date||"", calTime:time||""},
     function(result){
-      // Instantly remove the row with fade
+      // Fade out the row
       if (row) {
         row.style.transition = "opacity 0.35s";
         row.style.opacity = "0";
         setTimeout(function(){ row.remove(); }, 350);
       }
-      // Update memory so metrics re-render correctly
+      // Remove only this exact booking from memory
       S.booking = S.booking.filter(function(b){
-        return !(b.student===sk && b.instructor===inst && b.date===date && b.time===time);
+        return !(String(b.student)===String(sk) &&
+                 String(b.instructor)===String(inst) &&
+                 String(b.date)===String(date) &&
+                 String(b.time)===String(time));
       });
-      S.lessonLog.unshift({date:date, time:time, student:sk, instructor:inst, status:"DONE"});
+      // Add to done log in memory with correct course
+      S.lessonLog.unshift({
+        date: date, time: time,
+        student: sk, instructor: inst,
+        course: thisCourse,
+        status: "DONE"
+      });
+      // Re-render
       renderInstructor();
     },
     function(err){
