@@ -1317,7 +1317,8 @@ function renderInstructor() {
     metric("我的學生", myData.length) +
     metric("未來預約", booked,"c-blue") +
     metric(mLabel, done,"c-green") +
-    metric("Credit 不足", low, low>0?"c-red":"c-green");ooking.filter(function(b){ return inst==="ALL"||b.instructor===inst; }).slice(0,20);
+    metric("Credit 不足", low, low>0?"c-red":"c-green");
+  var upcoming=S.booking.filter(function(b){ return inst==="ALL"||b.instructor===inst; }).slice(0,20);
   document.getElementById("inst-upcoming").innerHTML = upcoming.length ?
     upcoming.map(function(b){
       var mBtn = el("button",{
