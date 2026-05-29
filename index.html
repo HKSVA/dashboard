@@ -1366,9 +1366,12 @@ function markDoneFromBooking(sk, inst, date, time) {
                  String(b.time)===String(time));
       });
       // Add to done log in memory with correct course
+      // Use S.instructor if available to ensure exact match with filter
+      var logInst = (S.instructor && S.instructor !== "") ? S.instructor : inst;
+      console.log('[Done] logInst='+logInst+' sk='+sk+' date='+date+' lessonLog len='+S.lessonLog.length);
       S.lessonLog.unshift({
         date: date, time: time,
-        student: sk, instructor: inst,
+        student: sk, instructor: logInst,
         course: thisCourse,
         status: "DONE"
       });
