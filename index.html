@@ -379,6 +379,12 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
       <div class="inst-filter" id="inst-filter-row" style="display:none">
         <select id="inst-selector" onchange="renderInstructor()"><option value="ALL">全部導師</option></select>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <label style="font-size:12px;font-weight:700;color:#888">已完成月份：</label>
+        <select id="inst-month-filter" onchange="renderInstructor()" style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+          <option value="">全部</option>
+        </select>
+      </div>
       <div class="metrics" id="inst-metrics"></div>
       <div class="g2">
         <div class="card">
@@ -389,7 +395,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
           </table></div>
         </div>
         <div class="card">
-          <div class="card-header"><span class="card-title">最近已完成課堂</span></div>
+          <div class="card-header"><span class="card-title">已完成課堂</span></div>
           <div class="tbl-wrap"><table>
             <thead><tr><th>日期</th><th>時間</th><th>學生</th><th>狀態</th><th>薪金</th></tr></thead>
             <tbody id="inst-done"></tbody>
@@ -1277,16 +1283,41 @@ function renderInstructor() {
   var isel=document.getElementById("inst-selector");
   var inst=S.role==="instructor"?S.instructor:(isel?isel.value:"ALL");
   var myData=S.data.filter(function(r){ return inst==="ALL"||r.instructor===inst; });
-  var done  =S.lessonLog.filter(function(l){ return (inst==="ALL"||l.instructor===inst)&&l.status==="DONE"; }).length;
+  // Month filter for done list
+  var mfSel = document.getElementById("inst-month-filter");
+  var selMonth = mfSel ? mfSel.value : "";
+
+  // Populate month options from lessonLog
+  if (mfSel && mfSel.options.length <= 1) {
+    var months = {};
+    S.lessonLog.forEach(function(l){ if(l.date) months[l.date.substring(0,7)]=true; });
+    var mList = Object.keys(months).sort().reverse();
+    mList.forEach(function(m){
+      var opt = document.createElement("option");
+      opt.value = m; opt.textContent = m;
+      mfSel.appendChild(opt);
+    });
+    if (!selMonth) {
+      var now = new Date();
+      var curM = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+      if (months[curM]) { mfSel.value = curM; selMonth = curM; }
+    }
+  }
+
+  var doneFiltered = S.lessonLog.filter(function(l){
+    var instMatch = inst==="ALL" || l.instructor===inst;
+    var monthMatch = !selMonth || (l.date && l.date.substring(0,7)===selMonth);
+    return instMatch && l.status==="DONE" && monthMatch;
+  });
+  var done = doneFiltered.length;
   var booked=S.booking.filter(function(b){ return inst==="ALL"||b.instructor===inst; }).length;
   var low   =myData.filter(function(r){ return r.balance<0; }).length;
+  var mLabel = selMonth ? selMonth+" 完成" : "已完成課堂";
   document.getElementById("inst-metrics").innerHTML =
-    metric("\u6211\u7684\u5B78\u751F", myData.length) +
-    metric("\u672A\u4F86\u9810\u7D04", booked,"c-blue") +
-    metric("\u5DF2\u5B8C\u6210\u8AB2\u5802", done,"c-green") +
-    metric("Credit \u4E0D\u8DB3", low, low>0?"c-red":"c-green");
-
-  var upcoming=S.booking.filter(function(b){ return inst==="ALL"||b.instructor===inst; }).slice(0,20);
+    metric("我的學生", myData.length) +
+    metric("未來預約", booked,"c-blue") +
+    metric(mLabel, done,"c-green") +
+    metric("Credit 不足", low, low>0?"c-red":"c-green");ooking.filter(function(b){ return inst==="ALL"||b.instructor===inst; }).slice(0,20);
   document.getElementById("inst-upcoming").innerHTML = upcoming.length ?
     upcoming.map(function(b){
       var mBtn = el("button",{
@@ -1307,7 +1338,8 @@ function renderInstructor() {
     }).join("") :
     "<tr><td colspan=&quot;6&quot; style=&quot;text-align:center;color:#aaa;padding:20px&quot;>\u66AB\u7121\u9810\u7D04</td></tr>";
 
-  var doneRows=S.lessonLog.filter(function(l){ return inst==="ALL"||l.instructor===inst; }).sort(function(a,b){ return (b.date+b.time).localeCompare(a.date+a.time); }).slice(0,20);
+  // Use doneFiltered (already month+inst filtered) for the done table
+  var doneRows=doneFiltered.slice().sort(function(a,b){ return (b.date+b.time).localeCompare(a.date+a.time); });
   document.getElementById("inst-done").innerHTML = doneRows.length ?
     doneRows.map(function(l){
       var rk=l.instructor+(l.course?"|"+l.course:"");
@@ -1375,6 +1407,9 @@ function markDoneFromBooking(sk, inst, date, time) {
         course: thisCourse,
         status: "DONE"
       });
+      // Reset month dropdown so it repopulates with any new month
+      var mf = document.getElementById("inst-month-filter");
+      if (mf) { while(mf.options.length > 1) mf.remove(1); }
       // Re-render
       renderInstructor();
     },
