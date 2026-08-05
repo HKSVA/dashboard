@@ -471,7 +471,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>Pay_ID</th><th>日期</th><th>學生</th><th>Course</th><th>導師</th><th>金額</th><th>分成</th><th>分成金額</th><th>狀態</th><th>收據</th></tr></thead>
+            <thead><tr><th>Pay_ID</th><th>日期</th><th>學生</th><th>Course</th><th>導師</th><th>金額</th><th>分成</th><th>分成金額</th><th>狀態</th><th>收據 / Invoice</th></tr></thead>
             <tbody id="pay-tbody"></tbody>
           </table>
         </div>
@@ -1349,8 +1349,7 @@ function loadPayments() {
           "<td>"+(r.studioPct||"?")+"%/"+(r.instPct||"?")+"%</td>" +
           "<td>"+stShare+"</td>" +
           "<td>"+proc+"</td>" +
-          "<td>"+rcpt+"</td>" +
-          "<td>"+invBtn+"</td>" +
+          "<td style=\"white-space:nowrap\">"+rcpt+" "+invBtn+"</td>" +
         "</tr>";
       }).join("");
     });
