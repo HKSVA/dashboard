@@ -98,27 +98,21 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
 </head>
 <body>
 
+<!-- hidden stubs so existing code refs don't break -->
 <div id="login-wrap">
   <div class="login-card">
     <h2>SVA Dashboard</h2>
-    <p>請選擇角色登入系統</p>
-    <p id="login-hint" style="font-size:12px;color:#888;margin-bottom:16px;margin-top:-16px">載入中...</p>
+    <p style="font-size:12px;color:#888;margin-bottom:20px;margin-top:-8px">請輸入你的存取碼</p>
+    <select id="sel-role" style="display:none"><option value="admin">Admin</option><option value="account">Account</option><option value="instructor">Instructor</option></select>
+    <select id="sel-instructor" style="display:none"><option value="">—</option></select>
+    <input id="inp-student" type="text" style="display:none">
     <div class="form-group">
-      <label>登入角色</label>
-      <select id="sel-role" onchange="onRoleChange()">
-        <option value="admin">Admin</option>
-        <option value="account">Account</option>
-        <option value="instructor">Instructor</option>
-      </select>
+      <label>存取碼 Access Code</label>
+      <input type="password" id="inp-pin" placeholder="••••" autocomplete="off"
+        style="letter-spacing:.3em;font-size:18px;text-align:center"
+        onkeydown="if(event.key==='Enter') doLogin()">
     </div>
-    <div id="f-instructor" class="form-group" style="display:none">
-      <label>選擇導師</label>
-      <select id="sel-instructor"><option>載入中...</option></select>
-    </div>
-    <div id="f-student" class="form-group" style="display:none">
-      <label>學生姓名</label>
-      <input id="inp-student" type="text" placeholder="例：琛仔">
-    </div>
+    <div id="login-err" style="font-size:12px;color:#e74c3c;text-align:center;height:16px;margin-bottom:6px"></div>
     <button class="btn btn-primary" style="width:100%;margin-top:4px;justify-content:center" id="btn-login" onclick="doLogin()">登入</button>
   </div>
 </div>
@@ -345,6 +339,19 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
       <div class="form-group"><label>付款日期</label>
         <input id="enq-paydate" type="date">
       </div>
+    </div>
+    <div class="form-group"><label>Campaign</label>
+      <input id="enq-campaign" type="text" placeholder="例：Summer 2026, Elite T2">
+    </div>
+    <div style="display:flex;gap:16px;margin-bottom:14px">
+      <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:400;text-transform:none;cursor:pointer;padding:8px 14px;border:1.5px solid #e0e0e0;border-radius:8px">
+        <input type="checkbox" id="enq-studying" style="width:auto">
+        中學生／大專學生
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:400;text-transform:none;cursor:pointer;padding:8px 14px;border:1.5px solid #e0e0e0;border-radius:8px">
+        <input type="checkbox" id="enq-sva" style="width:auto">
+        SVA 學生
+      </label>
     </div>
     <div class="form-group"><label>備注</label>
       <textarea id="enq-remark" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:Arial;resize:vertical"></textarea>
@@ -722,7 +729,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
           <thead><tr>
             <th>日期</th><th>姓名</th><th>電話</th><th>來源</th>
             <th>狀態</th><th>首付</th><th>課程</th><th>款項</th>
-            <th>付款日期</th><th>備注</th><th></th>
+            <th>付款日期</th><th>Campaign</th><th>類型</th><th>備注</th><th></th>
           </tr></thead>
           <tbody id="mkt-tbody"></tbody>
         </table></div>
@@ -1061,24 +1068,36 @@ api("getInstructorList", {}, function(list) {
   });
 
 // ---- LOGIN / LOGOUT ----------------------------------------
+// PIN lookup table
+var PIN_MAP = {
+  "GGAO": { role:"admin",      label:"Admin",   instructor:"" },
+  "GTSE": { role:"account",    label:"Account", instructor:"" },
+  "GL1N": { role:"instructor", label:"Chiling",  instructor:"Chiling" },
+  "GQU1": { role:"instructor", label:"Crystal",  instructor:"Crystal" },
+  "GT1M": { role:"instructor", label:"Tim",      instructor:"Tim" },
+  "GMLS": { role:"instructor", label:"Mellissa", instructor:"Mellissa" },
+  "GKNY": { role:"instructor", label:"Kenny",    instructor:"Kenny" },
+  "GGUD": { role:"instructor", label:"Guddy",    instructor:"Guddy" },
+  "GNGA": { role:"instructor", label:"Yan",      instructor:"Yan" },
+  "GLU1": { role:"instructor", label:"Lui",      instructor:"Lui" }
+};
+
 function doLogin() {
-  // Use detected role from getMyRole() if available (locked)
-  S.role = window._detectedRole || document.getElementById("sel-role").value;
-  // For instructor: use detected name (locked)
-  if (S.role === "instructor") {
-    S.instructor = window._detectedInstructor ||
-                   document.getElementById("sel-instructor").value;
+  var pin = (document.getElementById("inp-pin")||{value:""}).value.trim().toUpperCase();
+  var entry = PIN_MAP[pin];
+
+  if (!entry) {
+    var errEl = document.getElementById("login-err");
+    if (errEl) { errEl.textContent = "密碼錯誤，請再試。"; setTimeout(function(){ errEl.textContent=""; }, 2500); }
+    else alert("密碼錯誤");
+    return;
   }
-  S.studentName = (document.getElementById("inp-student").value||"").trim();
-  if (S.role==="student" && !S.studentName) {
-    alert("\u8ACB\u8F38\u5165\u5B78\u751F\u59D3\u540D"); return;
-  }
+
+  S.role       = entry.role;
+  S.instructor = entry.instructor;
   document.getElementById("login-wrap").style.display = "none";
   document.getElementById("app-wrap").style.display   = "";
-  var lu = S.role==="instructor" ? S.instructor :
-           S.role==="student"    ? S.studentName :
-           S.role==="account"    ? "Account" : "Admin";
-  document.getElementById("lbl-user").textContent = lu;
+  document.getElementById("lbl-user").textContent     = entry.label;
   buildNav();
   loadAllData();
 }
@@ -2113,7 +2132,7 @@ function renderEnquiryTable() {
 
   var tb = document.getElementById("mkt-tbody");
   if (!rows.length) {
-    tb.innerHTML = "<tr><td colspan='11' style='text-align:center;color:#aaa;padding:20px'>暫無記錄</td></tr>";
+    tb.innerHTML = "<tr><td colspan='13' style='text-align:center;color:#aaa;padding:20px'>暫無記錄</td></tr>";
     return;
   }
 
@@ -2133,7 +2152,12 @@ function renderEnquiryTable() {
       "<td>"+(r.course ? badge(r.course) : "—")+"</td>" +
       "<td>"+(r.courseAmount ? "$"+parseFloat(r.courseAmount).toLocaleString() : "—")+"</td>" +
       "<td style='font-size:12px'>"+(r.payDate ? fmtDate(r.payDate) : "—")+"</td>" +
-      "<td style='font-size:12px;color:#555;max-width:160px;white-space:normal'>"+(r.remark||"")+"</td>" +
+      "<td style='font-size:12px;color:#888'>"+(r.campaign||"—")+"</td>" +
+      "<td style='font-size:11px'>" +
+        (r.studying==="Y" ? "<span class='badge' style='background:#e8f4fd;color:#2980b9;margin-right:3px'>中/大</span>" : "") +
+        (r.svaStudent==="Y" ? "<span class='badge' style='background:#eafaf1;color:#27ae60'>SVA</span>" : "") +
+      "</td>" +
+      "<td style='font-size:12px;color:#555;max-width:140px;white-space:normal'>"+(r.remark||"")+"</td>" +
       "<td><button class='btn btn-sm' onclick='openEditEnquiry("+i+")' style='font-size:11px;padding:3px 8px'>✏️</button></td>" +
     "</tr>";
   }).join("");
@@ -2149,6 +2173,9 @@ function openAddEnquiry() {
   document.getElementById("enq-course").value = "";
   document.getElementById("enq-courseamt").value = "";
   document.getElementById("enq-paydate").value = "";
+  document.getElementById("enq-campaign").value = "";
+  document.getElementById("enq-studying").checked = false;
+  document.getElementById("enq-sva").checked = false;
   document.getElementById("enq-remark").value = "";
   document.getElementById("enq-submit-btn").dataset.editIdx = "";
   document.getElementById("enq-submit-btn").dataset.editId = "";
@@ -2173,6 +2200,9 @@ function openEditEnquiry(idx) {
   document.getElementById("enq-course").value = r.course||"";
   document.getElementById("enq-courseamt").value = r.courseAmount||"";
   document.getElementById("enq-paydate").value = r.payDate||"";
+  document.getElementById("enq-campaign").value = r.campaign||"";
+  document.getElementById("enq-studying").checked = r.studying === "Y";
+  document.getElementById("enq-sva").checked = r.svaStudent === "Y";
   document.getElementById("enq-remark").value = r.remark||"";
   document.getElementById("enq-submit-btn").dataset.editId = r.id||"";
   openModal("modal-enquiry");
@@ -2199,7 +2229,10 @@ function submitEnquiry() {
     course: document.getElementById("enq-course").value,
     courseAmount: document.getElementById("enq-courseamt").value||"0",
     payDate: document.getElementById("enq-paydate").value,
-    remark: document.getElementById("enq-remark").value.trim()
+    campaign:   document.getElementById("enq-campaign").value.trim(),
+    studying:   document.getElementById("enq-studying").checked ? "Y" : "",
+    svaStudent: document.getElementById("enq-sva").checked ? "Y" : "",
+    remark:     document.getElementById("enq-remark").value.trim()
   };
 
   api("saveEnquiry", {enquiry: data}, function(r){
