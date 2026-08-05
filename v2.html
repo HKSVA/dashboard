@@ -1329,6 +1329,16 @@ function loadPayments() {
           el("span",{"class":"badge b-warn"},"\u5F85\u8655\u7406");
         var stShare = r.studioShare !== undefined ?
           "$"+r.studioShare+" / $"+r.instShare : "";
+        var invData = {
+          date: r.date||"",
+          studentName: r.studentName||"",
+          course: r.course||"",
+          instructor: r.instructor||"",
+          amount: r.amount||"",
+          termSize: r.termSize||"",
+          remark: r.remark||""
+        };
+        var invBtn = "<button class=\"btn btn-sm\" onclick=\"openInvoice("+JSON.stringify(invData).replace(/"/g,'&quot;')+")\">\uD83D\uDCC4 Invoice</button>";
         return "<tr>" +
           "<td>"+el("small",{style:"color:#888"},r.payId)+"</td>" +
           "<td>"+fmtDate(r.date)+"</td>" +
@@ -1340,6 +1350,7 @@ function loadPayments() {
           "<td>"+stShare+"</td>" +
           "<td>"+proc+"</td>" +
           "<td>"+rcpt+"</td>" +
+          "<td>"+invBtn+"</td>" +
         "</tr>";
       }).join("");
     });
@@ -1959,7 +1970,7 @@ function openInvoice(r) {
   // Pre-fill from payment record
   document.getElementById("inv-num").value = invNum;
   document.getElementById("inv-date").value = r.date || "";
-  document.getElementById("inv-payer").value = r.studentName || "";
+  document.getElementById("inv-payer").value = r.studentName || "";   // 繳款者預設 = 學生名
   document.getElementById("inv-student").value = r.studentName || "";
   document.getElementById("inv-course").value = r.course || "";
   document.getElementById("inv-instructor").value = r.instructor || "";
