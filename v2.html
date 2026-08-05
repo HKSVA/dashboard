@@ -289,6 +289,73 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
   </div>
 </div>
 
+<!-- ==== 新增查詢 Modal ==== -->
+<div class="modal-bg" id="modal-enquiry">
+  <div class="modal" style="max-width:560px">
+    <h3>📋 新增查詢記錄</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>姓名 *</label>
+        <input id="enq-name" type="text" placeholder="Name">
+      </div>
+      <div class="form-group"><label>電話</label>
+        <input id="enq-phone" type="tel" placeholder="+852 xxxx xxxx">
+      </div>
+    </div>
+    <div class="form-group"><label>電郵</label>
+      <input id="enq-email" type="email" placeholder="email@example.com">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>來源 *</label>
+        <select id="enq-source">
+          <option value="New">New</option>
+          <option value="Rejoin">Rejoin</option>
+          <option value="Group">Group Class</option>
+          <option value="Free">Free Workshop</option>
+        </select>
+      </div>
+      <div class="form-group"><label>狀態 *</label>
+        <select id="enq-status">
+          <option value="Following">Following</option>
+          <option value="No Response">No Response</option>
+          <option value="Paid">Paid</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>首付 (HK$)</label>
+        <input id="enq-firstamt" type="number" placeholder="0">
+      </div>
+      <div class="form-group"><label>課程</label>
+        <select id="enq-course">
+          <option value="">— 揀課程 —</option>
+          <option value="Elite">Elite</option>
+          <option value="Performer">Performer</option>
+          <option value="1on1">1on1</option>
+          <option value="Group Class">Group Class</option>
+          <option value="Workshop">Workshop</option>
+          <option value="Evaluation">Evaluation</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>課程款項 (HK$)</label>
+        <input id="enq-courseamt" type="number" placeholder="0">
+      </div>
+      <div class="form-group"><label>付款日期</label>
+        <input id="enq-paydate" type="date">
+      </div>
+    </div>
+    <div class="form-group"><label>備注</label>
+      <textarea id="enq-remark" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;font-family:Arial;resize:vertical"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-enquiry')">取消</button>
+      <button class="btn btn-primary" id="enq-submit-btn" onclick="submitEnquiry()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==== Invoice Modal ==== -->
 <div class="modal-bg" id="modal-invoice" style="z-index:600">
   <div class="modal" style="max-width:600px">
@@ -620,6 +687,44 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
         <div class="tbl-wrap"><table>
           <thead><tr><th>日期</th><th>類型</th><th>金額</th><th>描述</th><th>單據</th><th>狀態</th></tr></thead>
           <tbody id="exp-tbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ===== MARKETING / CRM ===== -->
+    <div class="page" id="page-marketing">
+      <!-- 5 Cards -->
+      <div class="metrics" id="mkt-cards" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px"></div>
+
+      <!-- Enquiry Table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 新客記錄</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="mkt-filter-status" onchange="renderEnquiryTable()" style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+              <option value="">全部狀態</option>
+              <option value="Following">Following</option>
+              <option value="Paid">Paid</option>
+              <option value="Rejected">Rejected</option>
+              <option value="No Response">No Response</option>
+            </select>
+            <select id="mkt-filter-source" onchange="renderEnquiryTable()" style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+              <option value="">全部來源</option>
+              <option value="New">New</option>
+              <option value="Rejoin">Rejoin</option>
+              <option value="Group">Group Class</option>
+              <option value="Free">Free Workshop</option>
+            </select>
+            <button class="btn btn-green" onclick="openAddEnquiry()">+ 新增</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr>
+            <th>日期</th><th>姓名</th><th>電話</th><th>來源</th>
+            <th>狀態</th><th>首付</th><th>課程</th><th>款項</th>
+            <th>付款日期</th><th>備注</th><th></th>
+          </tr></thead>
+          <tbody id="mkt-tbody"></tbody>
         </table></div>
       </div>
     </div>
@@ -986,7 +1091,7 @@ function doLogout() {
 // ---- NAV ---------------------------------------------------
 function buildNav() {
   var tabs;
-  if (S.role==="admin")   tabs=[["admin-overview","\u7E3D\u89BD"],["admin-students","\u5B78\u751F\u7BA1\u7406"],["admin-course","Course View"],["instructor","Instructor View"],["expense","\u8CBB\u7528\u5BE9\u6279"]];
+  if (S.role==="admin")   tabs=[["admin-overview","\u7E3D\u89BD"],["admin-students","\u5B78\u751F\u7BA1\u7406"],["admin-course","Course View"],["instructor","Instructor View"],["expense","\u8CBB\u7528\u5BE9\u6279"],["marketing","\uD83D\uDCCA Marketing"]];
   else if(S.role==="account") tabs=[["account-payments","\u7E73\u8CBB\u8A18\u9304"],["account-split","\u5206\u6210\u7BA1\u7406"],["account-payroll","\u85AA\u91D1\u8A18\u9304"],["expense","\u8CBB\u7528\u5BE9\u6279"]];
   else if(S.role==="instructor") tabs=[["instructor","\u6211\u7684\u8AB2\u5802"],["expense","\u8CBB\u7528\u7533\u5831"],["admin-course","Course View"]];
   else tabs=[["instructor","\u6211\u7684\u8AB2\u5802"]];
@@ -1023,6 +1128,7 @@ function showPage(name) {
   else if(name==="account-split")    loadSplitPage();
   else if(name==="account-payroll")  { /* payroll shown on demand */ }
   else if(name==="expense")          loadExpensePage();
+  else if(name==="marketing")        loadMarketingPage();
 }
 
 // ---- DATA LOADING ------------------------------------------
@@ -1954,6 +2060,157 @@ function approveExp(id, status) {
   api("approveExpense", {expenseId:id, status:status}, function(r){
     alert(r.msg);
     loadExpensePage();
+  });
+}
+
+// ---- MARKETING / CRM ----------------------------------------
+var MKT_DATA = [];
+
+function loadMarketingPage() {
+  api("getEnquiries", {}, function(rows) {
+    MKT_DATA = rows || [];
+    renderMktCards();
+    renderEnquiryTable();
+  }, function(e) {
+    document.getElementById("mkt-tbody").innerHTML =
+      "<tr><td colspan='11' style='text-align:center;color:#aaa;padding:20px'>載入失敗: "+e+"</td></tr>";
+  });
+}
+
+function renderMktCards() {
+  var rows = MKT_DATA;
+  var enquiry   = rows.length;
+  var client    = rows.filter(function(r){ return r.firstAmount && parseFloat(r.firstAmount) > 0; }).length;
+  var student   = rows.filter(function(r){ return r.course && r.courseAmount && parseFloat(r.courseAmount) > 0; }).length;
+  var newSales  = rows.reduce(function(s,r){ return s + (parseFloat(r.firstAmount)||0); }, 0);
+  var fupSales  = rows.reduce(function(s,r){ return s + (parseFloat(r.courseAmount)||0); }, 0);
+
+  var cards = [
+    { label:"Enquiry",          val:enquiry,              sub:"總查詢人數",    col:"#4da6ff" },
+    { label:"Client",           val:client,               sub:"首付人數",      col:"#9b59b6" },
+    { label:"Student",          val:student,              sub:"跟進課程人數",  col:"#27ae60" },
+    { label:"New Sales",        val:"$"+newSales.toLocaleString(), sub:"首付總額", col:"#e67e22" },
+    { label:"Follow-up Sales",  val:"$"+fupSales.toLocaleString(), sub:"課程款項總額", col:"#e74c3c" }
+  ];
+
+  document.getElementById("mkt-cards").innerHTML = cards.map(function(cd){
+    return "<div class='metric-card' style='border-top:3px solid "+cd.col+"'>" +
+      "<div class='metric-label'>"+cd.label+"</div>" +
+      "<div class='metric-value' style='color:"+cd.col+"'>"+cd.val+"</div>" +
+      "<div style='font-size:11px;color:#999;margin-top:2px'>"+cd.sub+"</div>" +
+    "</div>";
+  }).join("");
+}
+
+function renderEnquiryTable() {
+  var filterStatus = (document.getElementById("mkt-filter-status")||{value:""}).value;
+  var filterSource = (document.getElementById("mkt-filter-source")||{value:""}).value;
+  var rows = MKT_DATA.filter(function(r){
+    if (filterStatus && r.status !== filterStatus) return false;
+    if (filterSource && r.source !== filterSource) return false;
+    return true;
+  }).sort(function(a,b){ return (b.date||"").localeCompare(a.date||""); });
+
+  var tb = document.getElementById("mkt-tbody");
+  if (!rows.length) {
+    tb.innerHTML = "<tr><td colspan='11' style='text-align:center;color:#aaa;padding:20px'>暫無記錄</td></tr>";
+    return;
+  }
+
+  var srcColor = { New:"#4da6ff", Rejoin:"#9b59b6", Group:"#27ae60", Free:"#e67e22" };
+  var stColor  = { Paid:"#27ae60", Following:"#3498db", Rejected:"#e74c3c", "No Response":"#95a5a6" };
+
+  tb.innerHTML = rows.map(function(r, i){
+    var srcCol = srcColor[r.source] || "#888";
+    var stCol  = stColor[r.status]  || "#888";
+    return "<tr>" +
+      "<td style='font-size:12px;color:#888'>"+fmtDate(r.date)+"</td>" +
+      "<td><strong>"+r.name+"</strong></td>" +
+      "<td style='font-size:12px'>"+( r.phone||"—")+"</td>" +
+      "<td><span class='badge' style='background:"+srcCol+"22;color:"+srcCol+"'>"+r.source+"</span></td>" +
+      "<td><span class='badge' style='background:"+stCol+"22;color:"+stCol+"'>"+r.status+"</span></td>" +
+      "<td>"+(r.firstAmount ? "$"+parseFloat(r.firstAmount).toLocaleString() : "—")+"</td>" +
+      "<td>"+(r.course ? badge(r.course) : "—")+"</td>" +
+      "<td>"+(r.courseAmount ? "$"+parseFloat(r.courseAmount).toLocaleString() : "—")+"</td>" +
+      "<td style='font-size:12px'>"+(r.payDate ? fmtDate(r.payDate) : "—")+"</td>" +
+      "<td style='font-size:12px;color:#555;max-width:160px;white-space:normal'>"+(r.remark||"")+"</td>" +
+      "<td><button class='btn btn-sm' onclick='openEditEnquiry("+i+")' style='font-size:11px;padding:3px 8px'>✏️</button></td>" +
+    "</tr>";
+  }).join("");
+}
+
+function openAddEnquiry() {
+  document.getElementById("enq-name").value = "";
+  document.getElementById("enq-phone").value = "";
+  document.getElementById("enq-email").value = "";
+  document.getElementById("enq-source").value = "New";
+  document.getElementById("enq-status").value = "Following";
+  document.getElementById("enq-firstamt").value = "";
+  document.getElementById("enq-course").value = "";
+  document.getElementById("enq-courseamt").value = "";
+  document.getElementById("enq-paydate").value = "";
+  document.getElementById("enq-remark").value = "";
+  document.getElementById("enq-submit-btn").dataset.editIdx = "";
+  document.getElementById("enq-submit-btn").dataset.editId = "";
+  openModal("modal-enquiry");
+}
+
+function openEditEnquiry(idx) {
+  var r = MKT_DATA.filter(function(r){
+    var fs = (document.getElementById("mkt-filter-status")||{value:""}).value;
+    var fsr = (document.getElementById("mkt-filter-source")||{value:""}).value;
+    if (fs && r.status !== fs) return false;
+    if (fsr && r.source !== fsr) return false;
+    return true;
+  }).sort(function(a,b){ return (b.date||"").localeCompare(a.date||""); })[idx];
+  if (!r) return;
+  document.getElementById("enq-name").value = r.name||"";
+  document.getElementById("enq-phone").value = r.phone||"";
+  document.getElementById("enq-email").value = r.email||"";
+  document.getElementById("enq-source").value = r.source||"New";
+  document.getElementById("enq-status").value = r.status||"Following";
+  document.getElementById("enq-firstamt").value = r.firstAmount||"";
+  document.getElementById("enq-course").value = r.course||"";
+  document.getElementById("enq-courseamt").value = r.courseAmount||"";
+  document.getElementById("enq-paydate").value = r.payDate||"";
+  document.getElementById("enq-remark").value = r.remark||"";
+  document.getElementById("enq-submit-btn").dataset.editId = r.id||"";
+  openModal("modal-enquiry");
+}
+
+function submitEnquiry() {
+  var name = document.getElementById("enq-name").value.trim();
+  if (!name) { alert("請填寫姓名"); return; }
+  var btn = document.getElementById("enq-submit-btn");
+  btn.disabled = true; btn.textContent = "儲存中...";
+
+  var today = new Date();
+  var ds = today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
+
+  var data = {
+    id: btn.dataset.editId || ("ENQ-"+Date.now()),
+    date: ds,
+    name: name,
+    phone: document.getElementById("enq-phone").value.trim(),
+    email: document.getElementById("enq-email").value.trim(),
+    source: document.getElementById("enq-source").value,
+    status: document.getElementById("enq-status").value,
+    firstAmount: document.getElementById("enq-firstamt").value||"0",
+    course: document.getElementById("enq-course").value,
+    courseAmount: document.getElementById("enq-courseamt").value||"0",
+    payDate: document.getElementById("enq-paydate").value,
+    remark: document.getElementById("enq-remark").value.trim()
+  };
+
+  api("saveEnquiry", {enquiry: data}, function(r){
+    btn.disabled = false; btn.textContent = "儲存";
+    if (r.ok) {
+      closeModal("modal-enquiry");
+      loadMarketingPage();
+    } else { alert(r.msg || "儲存失敗"); }
+  }, function(e){
+    btn.disabled = false; btn.textContent = "儲存";
+    alert("Error: "+e);
   });
 }
 
