@@ -1146,7 +1146,7 @@ var PIN_MAP = {
   "GKNY": { role:"instructor", label:"Kenny",    instructor:"Kenny" },
   "GGUD": { role:"instructor", label:"Guddy",    instructor:"Guddy" },
   "GNGA": { role:"instructor", label:"Yan",      instructor:"Yan" },
-  "GLU1": { role:"instructor", label:"Lui",      instructor:"Lui" }
+  "GLU1": { role:"lui",        label:"Lui",      instructor:"Lui" }
 };
 
 function doLogin() {
@@ -1179,6 +1179,7 @@ function buildNav() {
   var tabs;
   if (S.role==="admin")   tabs=[["admin-overview","\u7E3D\u89BD"],["admin-students","\u5B78\u751F\u7BA1\u7406"],["admin-course","Course View"],["instructor","Instructor View"],["expense","\u8CBB\u7528\u5BE9\u6279"],["workshop-payments","\uD83C\uDFAD \u6D3B\u52D5\u6536\u6B3E"],["marketing","\uD83D\uDCCA Marketing"]];
   else if(S.role==="account") tabs=[["account-payments","\u7E73\u8CBB\u8A18\u9304"],["workshop-payments","\uD83C\uDFAD \u6D3B\u52D5\u6536\u6B3E"],["account-split","\u5206\u6210\u7BA1\u7406"],["account-payroll","\u85AA\u91D1\u8A18\u9304"],["expense","\u8CBB\u7528\u5BE9\u6279"]];
+  else if(S.role==="lui") tabs=[["account-payments","\u7E73\u8CBB\u8A18\u9304"],["workshop-payments","\uD83C\uDFAD \u6D3B\u52D5\u6536\u6B3E"],["admin-students","\u5B78\u751F\u7BA1\u7406"]];
   else if(S.role==="instructor") tabs=[["instructor","\u6211\u7684\u8AB2\u5802"],["expense","\u8CBB\u7528\u7533\u5831"],["admin-course","Course View"]];
   else tabs=[["instructor","\u6211\u7684\u8AB2\u5802"]];
 
@@ -1222,7 +1223,7 @@ function showPage(name) {
 function loadAllData() {
   document.getElementById("loading-msg").style.display = "block";
   var teacher = S.role==="instructor" ? S.instructor : "";
-  api("getDashboardDataFull", {role:S.role, teacher:teacher, studentName:S.studentName||""}, function(result) {
+  api("getDashboardDataFull", {role:(S.role==="lui"?"account":S.role), teacher:teacher, studentName:S.studentName||""}, function(result) {
       S.data     = result.ledger  || [];
       S.booking  = result.booking || [];
       S.lessonLog= result.log     || [];
@@ -1234,7 +1235,8 @@ function loadAllData() {
       api("getInstRates", {}, function(r){ S.instRates=r||{}; });
       var dp = S.role==="instructor" ? "instructor" :
                S.role==="student"    ? "student" :
-               S.role==="account"    ? "account-payments" : "admin-overview";
+               S.role==="account"    ? "account-payments" :
+           S.role==="lui"        ? "account-payments" : "admin-overview";
       showPage(dp);
     }, function(err) {
       document.getElementById("loading-msg").innerHTML = el("p",{style:"color:#e74c3c"},""+err);
