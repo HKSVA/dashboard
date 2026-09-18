@@ -2076,8 +2076,14 @@ function loadExpensePage() {
     "<div class=\"spinner\" style=\"width:20px;height:20px;margin:8px auto\"></div>";
 
   if (isInst) {
-    api("getInstructorMonthlyTotal", {instructor: inst, yearMonth: m}, function(d){
-      var bt = d.byType || {};
+    api("getExpenses", {instructor: inst, yearMonth: m}, function(rows){
+      var bt = { "Private Class":0, "Group Class":0, "Workshop":0, "Freelance":0, "Claim":0, "Performance":0 };
+      var grandTotal = 0;
+      (rows||[]).forEach(function(e){
+        if (e.status === "REJECTED") return;
+        if (bt[e.type] !== undefined) bt[e.type] += Number(e.amount)||0;
+        grandTotal += Number(e.amount)||0;
+      });
       document.getElementById("exp-summary").innerHTML =
         "<div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px\">" +
         expCard("Private Class", "$"+(bt["Private Class"]||0), "", "#1a7fc1") +
@@ -2086,9 +2092,9 @@ function loadExpensePage() {
         expCard("Others", "$"+((bt["Freelance"]||0)+(bt["Claim"]||0)+(bt["Performance"]||0)), "", "#16a085") +
         "<div style=\"background:#1a1a1a;border-radius:10px;padding:14px 16px\">" +
           "<div style=\"font-size:11px;color:#aaa;font-weight:700;text-transform:uppercase;margin-bottom:6px\">總額</div>" +
-          "<div style=\"font-size:24px;font-weight:700;color:#4da6ff\">$"+d.grandTotal+"</div></div>" +
+          "<div style=\"font-size:24px;font-weight:700;color:#4da6ff\">$"+grandTotal+"</div></div>" +
         "</div>";
-      renderExpTable(d.expenses || [], false);
+      renderExpTable(rows || [], false);
     });
   } else {
     api("getExpenses", {instructor:"", yearMonth: m}, function(rows){
