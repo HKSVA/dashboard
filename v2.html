@@ -363,6 +363,49 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
   </div>
 </div>
 
+<!-- ==== Workshop 收款 Modal ==== -->
+<div class="modal-bg" id="modal-ws-payment">
+  <div class="modal" style="max-width:520px">
+    <h3>🎭 活動收款上傳</h3>
+    <div class="form-group"><label>活動名稱 *</label>
+      <select id="wsp-event">
+        <option value="">— 請選擇活動 —</option>
+        <option value="19/9 廣東歌文化節 - 聲樂大師班">19/9 廣東歌文化節 - 聲樂大師班（導師：Guddy, Luigei）</option>
+      </select>
+    </div>
+    <div class="form-group"><label>參加者姓名 *</label>
+      <input id="wsp-name" type="text" placeholder="參加者名字">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label>金額 (HK$) *</label>
+        <input id="wsp-amount" type="number" inputmode="numeric" placeholder="0">
+      </div>
+      <div class="form-group"><label>收款日期 *</label>
+        <input id="wsp-date" type="date">
+      </div>
+    </div>
+    <div class="form-group"><label>繳款方式</label>
+      <select id="wsp-method">
+        <option value="Bank in">Bank in</option>
+        <option value="PayMe">PayMe</option>
+        <option value="Cash">Cash</option>
+      </select>
+    </div>
+    <div class="form-group"><label>備注</label>
+      <input id="wsp-remark" type="text" placeholder="可選">
+    </div>
+    <div class="form-group"><label>單據圖片</label>
+      <input id="wsp-image" type="file" accept="image/*" capture="environment" onchange="previewWsReceipt()"
+        style="width:100%;padding:10px;border:1.5px dashed #ccc;border-radius:8px;font-size:13px;background:#fafafa">
+      <div id="wsp-preview" style="margin-top:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-ws-payment')">取消</button>
+      <button class="btn btn-primary" id="wsp-submit-btn" onclick="submitWsPayment()">提交</button>
+    </div>
+  </div>
+</div>
+
 <!-- ==== Invoice Modal ==== -->
 <div class="modal-bg" id="modal-invoice" style="z-index:600">
   <div class="modal" style="max-width:600px">
@@ -694,6 +737,30 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#fafbfd}
         <div class="tbl-wrap"><table>
           <thead><tr><th>日期</th><th>類型</th><th>金額</th><th>描述</th><th>單據</th><th>狀態</th></tr></thead>
           <tbody id="exp-tbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ===== WORKSHOP PAYMENTS ===== -->
+    <div class="page" id="page-workshop-payments">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎭 活動收款記錄</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="ws-filter-event" onchange="renderWorkshopTable()" style="padding:7px 11px;border:1.5px solid #ddd;border-radius:7px;font-size:13px">
+              <option value="">全部活動</option>
+              <option value="19/9 廣東歌文化節 - 聲樂大師班">19/9 廣東歌文化節 - 聲樂大師班</option>
+            </select>
+            <button class="btn btn-green" onclick="openAddWorkshopPayment()">📸 上傳收款</button>
+          </div>
+        </div>
+        <div id="ws-summary" style="padding:12px 18px;display:flex;gap:16px;border-bottom:1px solid #eee;flex-wrap:wrap"></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr>
+            <th>日期</th><th>活動</th><th>參加者</th><th>金額</th>
+            <th>繳款方式</th><th>備注</th><th>收據</th><th>Invoice</th>
+          </tr></thead>
+          <tbody id="ws-tbody"></tbody>
         </table></div>
       </div>
     </div>
@@ -1110,8 +1177,8 @@ function doLogout() {
 // ---- NAV ---------------------------------------------------
 function buildNav() {
   var tabs;
-  if (S.role==="admin")   tabs=[["admin-overview","\u7E3D\u89BD"],["admin-students","\u5B78\u751F\u7BA1\u7406"],["admin-course","Course View"],["instructor","Instructor View"],["expense","\u8CBB\u7528\u5BE9\u6279"],["marketing","\uD83D\uDCCA Marketing"]];
-  else if(S.role==="account") tabs=[["account-payments","\u7E73\u8CBB\u8A18\u9304"],["account-split","\u5206\u6210\u7BA1\u7406"],["account-payroll","\u85AA\u91D1\u8A18\u9304"],["expense","\u8CBB\u7528\u5BE9\u6279"]];
+  if (S.role==="admin")   tabs=[["admin-overview","\u7E3D\u89BD"],["admin-students","\u5B78\u751F\u7BA1\u7406"],["admin-course","Course View"],["instructor","Instructor View"],["expense","\u8CBB\u7528\u5BE9\u6279"],["workshop-payments","\uD83C\uDFAD \u6D3B\u52D5\u6536\u6B3E"],["marketing","\uD83D\uDCCA Marketing"]];
+  else if(S.role==="account") tabs=[["account-payments","\u7E73\u8CBB\u8A18\u9304"],["workshop-payments","\uD83C\uDFAD \u6D3B\u52D5\u6536\u6B3E"],["account-split","\u5206\u6210\u7BA1\u7406"],["account-payroll","\u85AA\u91D1\u8A18\u9304"],["expense","\u8CBB\u7528\u5BE9\u6279"]];
   else if(S.role==="instructor") tabs=[["instructor","\u6211\u7684\u8AB2\u5802"],["expense","\u8CBB\u7528\u7533\u5831"],["admin-course","Course View"]];
   else tabs=[["instructor","\u6211\u7684\u8AB2\u5802"]];
 
@@ -1148,6 +1215,7 @@ function showPage(name) {
   else if(name==="account-payroll")  { /* payroll shown on demand */ }
   else if(name==="expense")          loadExpensePage();
   else if(name==="marketing")        loadMarketingPage();
+  else if(name==="workshop-payments") loadWorkshopPayments();
 }
 
 // ---- DATA LOADING ------------------------------------------
@@ -2079,6 +2147,129 @@ function approveExp(id, status) {
   api("approveExpense", {expenseId:id, status:status}, function(r){
     alert(r.msg);
     loadExpensePage();
+  });
+}
+
+// ---- WORKSHOP PAYMENTS ----------------------------------------
+var WS_IMG = null;
+var WS_DATA = [];
+
+function loadWorkshopPayments() {
+  api("getWorkshopPayments", {}, function(rows) {
+    WS_DATA = rows || [];
+    renderWorkshopSummary();
+    renderWorkshopTable();
+  }, function(e) {
+    document.getElementById("ws-tbody").innerHTML =
+      "<tr><td colspan='8' style='text-align:center;color:#aaa;padding:20px'>載入失敗: "+e+"</td></tr>";
+  });
+}
+
+function renderWorkshopSummary() {
+  var rows = WS_DATA;
+  var total = rows.reduce(function(s,r){ return s+(parseFloat(r.amount)||0); }, 0);
+  var events = {};
+  rows.forEach(function(r){ events[r.eventName] = (events[r.eventName]||0) + (parseFloat(r.amount)||0); });
+  var html = "<div style='font-size:12px;color:#888'>總人次: <strong style='color:#222'>"+rows.length+"</strong></div>" +
+    "<div style='font-size:12px;color:#888'>總收款: <strong style='color:#27ae60'>$"+total.toLocaleString()+"</strong></div>";
+  Object.keys(events).forEach(function(k){
+    html += "<div style='font-size:11px;color:#aaa'>"+k+": $"+events[k].toLocaleString()+"</div>";
+  });
+  document.getElementById("ws-summary").innerHTML = html;
+}
+
+function renderWorkshopTable() {
+  var filter = (document.getElementById("ws-filter-event")||{value:""}).value;
+  var rows = WS_DATA.filter(function(r){ return !filter || r.eventName === filter; })
+    .sort(function(a,b){ return (b.date||"").localeCompare(a.date||""); });
+  var tb = document.getElementById("ws-tbody");
+  if (!rows.length) {
+    tb.innerHTML = "<tr><td colspan='8' style='text-align:center;color:#aaa;padding:20px'>暫無記錄</td></tr>";
+    return;
+  }
+  tb.innerHTML = rows.map(function(r){
+    var rcpt = r.receiptUrl ? "<a href='"+r.receiptUrl+"' target='_blank' class='btn btn-sm' style='font-size:11px;padding:2px 8px'>📄</a>" : "";
+    var invData = { date:r.date||"", studentName:r.name||"", course:r.eventName||"",
+      instructor:"Guddy, Luigei", amount:r.amount||"", termSize:"1",
+      remark:r.remark||"", payMethod:r.method||"" };
+    var invBtn = "<button class='btn btn-sm' onclick='openInvoice("+JSON.stringify(invData).replace(/"/g,"&quot;")+")' style='font-size:11px;padding:2px 8px'>📄 Inv</button>";
+    return "<tr>" +
+      "<td style='font-size:12px;color:#888'>"+fmtDate(r.date)+"</td>" +
+      "<td style='font-size:11px;max-width:180px'>"+r.eventName+"</td>" +
+      "<td><strong>"+r.name+"</strong></td>" +
+      "<td><strong>$"+(parseFloat(r.amount)||0).toLocaleString()+"</strong></td>" +
+      "<td style='font-size:12px'>"+(r.method||"")+"</td>" +
+      "<td style='font-size:11px;color:#888'>"+(r.remark||"")+"</td>" +
+      "<td>"+rcpt+"</td>" +
+      "<td>"+invBtn+"</td>" +
+    "</tr>";
+  }).join("");
+}
+
+function openAddWorkshopPayment() {
+  document.getElementById("wsp-event").value = "";
+  document.getElementById("wsp-name").value = "";
+  document.getElementById("wsp-amount").value = "";
+  document.getElementById("wsp-date").value = new Date().toISOString().split("T")[0];
+  document.getElementById("wsp-method").value = "PayMe";
+  document.getElementById("wsp-remark").value = "";
+  document.getElementById("wsp-image").value = "";
+  document.getElementById("wsp-preview").innerHTML = "";
+  WS_IMG = null;
+  openModal("modal-ws-payment");
+}
+
+function previewWsReceipt() {
+  var f = document.getElementById("wsp-image").files[0];
+  var box = document.getElementById("wsp-preview");
+  if (!f) { box.innerHTML = ""; WS_IMG = null; return; }
+  box.innerHTML = "<span style='font-size:12px;color:#888'>處理中...</span>";
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var max=1400, w=img.width, h=img.height;
+      if(w>max||h>max){ if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} }
+      var cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+      cv.getContext("2d").drawImage(img,0,0,w,h);
+      var dataUrl=cv.toDataURL("image/jpeg",0.82);
+      WS_IMG={base64:dataUrl.split(",")[1],type:"image/jpeg"};
+      box.innerHTML="<img src='"+dataUrl+"' style='max-width:100%;max-height:180px;border-radius:8px;border:1px solid #eee'>" +
+        "<div style='font-size:11px;color:#27ae60;margin-top:4px'>✓ 已準備上傳</div>";
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+
+function submitWsPayment() {
+  var eventName = document.getElementById("wsp-event").value;
+  var name      = document.getElementById("wsp-name").value.trim();
+  var amount    = document.getElementById("wsp-amount").value;
+  var date      = document.getElementById("wsp-date").value;
+  if (!eventName || !name || !amount || !date) {
+    alert("請填寫活動、參加者姓名、金額、日期"); return;
+  }
+  var btn = document.getElementById("wsp-submit-btn");
+  btn.disabled = true; btn.textContent = "上傳中...";
+
+  api("saveWorkshopPayment", { wsData: {
+    id: "WSP-"+Date.now(),
+    date: date,
+    eventName: eventName,
+    name: name,
+    amount: amount,
+    method: document.getElementById("wsp-method").value,
+    remark: document.getElementById("wsp-remark").value.trim(),
+    imageBase64: WS_IMG ? WS_IMG.base64 : "",
+    imageType: WS_IMG ? WS_IMG.type : ""
+  }}, function(r){
+    btn.disabled = false; btn.textContent = "提交";
+    if (r.ok) { closeModal("modal-ws-payment"); loadWorkshopPayments(); }
+    else alert(r.msg||"提交失敗");
+  }, function(e){
+    btn.disabled = false; btn.textContent = "提交";
+    alert("Error: "+e);
   });
 }
 
